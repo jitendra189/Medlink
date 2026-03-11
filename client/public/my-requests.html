@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>My Requests - MedLink</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Poppins
+}
+
+body{
+display:flex;
+background:linear-gradient(135deg,#020617,#0f172a);
+color:white
+}
+
+/* SIDEBAR */
+
+.sidebar{
+width:240px;
+background:#020617;
+height:100vh;
+padding:25px;
+border-right:1px solid #1e293b
+}
+
+.sidebar h2{
+color:#38bdf8;
+margin-bottom:40px
+}
+
+.sidebar a{
+display:block;
+padding:12px;
+margin:10px 0;
+color:white;
+text-decoration:none;
+border-radius:8px
+}
+
+.sidebar a:hover{
+background:#2563eb
+}
+
+/* MAIN */
+
+.main{
+flex:1;
+padding:40px
+}
+
+/* REQUEST GRID */
+
+.request-grid{
+
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:20px
+
+}
+
+/* CARD */
+
+.request-card{
+
+background:#0f172a;
+padding:20px;
+border-radius:12px;
+box-shadow:0 10px 25px rgba(0,0,0,0.5)
+
+}
+
+.request-card h3{
+color:#38bdf8;
+margin-bottom:10px
+}
+
+.status{
+
+display:inline-block;
+padding:5px 10px;
+border-radius:6px;
+margin-top:8px;
+font-size:12px
+
+}
+
+.pending{
+background:#facc15;
+color:black
+}
+
+.accepted{
+background:#22c55e
+}
+
+.rejected{
+background:#ef4444
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+
+<h2>MedLink</h2>
+
+<a href="patient-dashboard.html">Dashboard</a>
+<a href="nearby-hospitals.html">Nearby Hospitals</a>
+<a href="donor-search.html">Blood Donors</a>
+<a href="my-requests.html">My Requests</a>
+<a href="patient-profile.html">Profile</a>
+
+</div>
+
+<div class="main">
+
+<h1>My Emergency Requests</h1>
+
+<div class="request-grid" id="requestList">
+
+<p>Loading requests...</p>
+
+</div>
+
+</div>
+
+<script>
+
+const API="http://localhost:5000/api"
+const token=localStorage.getItem("token")
+
+/* LOAD REQUESTS */
+
+async function loadRequests(){
+
+const res=await fetch(API+"/emergency/my",{
+
+headers:{
+Authorization:"Bearer "+token
+}
+
+})
+
+const requests=await res.json()
+
+let html=""
+
+if(!requests || requests.length===0){
+
+html="<p>No emergency requests found</p>"
+
+}else{
+
+requests.forEach(r=>{
+
+html+=`
+
+<div class="request-card">
+
+<h3>Emergency (${r.type})</h3>
+
+<p><b>Hospital:</b> ${r.hospital?.name || "Waiting for hospital response"}</p>
+
+<p><b>Location:</b> ${r.location?.lat || "-"}, ${r.location?.lng || "-"}</p>
+
+<span class="status ${r.status}">
+${r.status}
+</span>
+
+</div>
+
+`
+
+})
+
+}
+
+document.getElementById("requestList").innerHTML=html
+
+}
+
+loadRequests()
+
+</script>
+
+</body>
+
+</html>

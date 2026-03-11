@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<title>Emergency SOS - MedLink</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Poppins
+}
+
+body{
+background:linear-gradient(135deg,#020617,#0f172a);
+color:white;
+padding:40px
+}
+
+.container{
+max-width:900px;
+margin:auto
+}
+
+h1{
+color:#38bdf8;
+margin-bottom:20px
+}
+
+.card{
+background:#0f172a;
+padding:25px;
+border-radius:12px;
+margin-bottom:20px;
+box-shadow:0 10px 25px rgba(0,0,0,0.5)
+}
+
+button{
+padding:14px 24px;
+background:#ef4444;
+border:none;
+border-radius:8px;
+color:white;
+font-size:16px;
+cursor:pointer
+}
+
+button:hover{
+background:#dc2626
+}
+
+.status{
+margin-top:10px;
+font-weight:500
+}
+
+.hospital-card{
+background:#020617;
+padding:15px;
+margin-top:10px;
+border-radius:8px
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🚑 Emergency SOS</h1>
+
+<div class="card">
+
+<h3>Send Emergency Request</h3>
+
+<p>Your location will be shared with nearby hospitals.</p>
+
+<button onclick="sendSOS()">Send SOS Request</button>
+
+<p id="location"></p>
+
+<p class="status" id="status">No emergency request</p>
+
+</div>
+
+<div class="card">
+
+<h3>Nearby Hospitals</h3>
+
+<div id="hospitalList">
+
+Loading hospitals...
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+const API="http://localhost:5000/api"
+
+const token=localStorage.getItem("token")
+
+/* LOCATION */
+
+function getLocation(){
+
+return new Promise((resolve,reject)=>{
+
+if(!navigator.geolocation){
+
+reject("Location not supported")
+
+}
+
+navigator.geolocation.getCurrentPosition(position=>{
+
+const lat=position.coords.latitude
+const lng=position.coords.longitude
+
+document.getElementById("location").innerHTML=
+"Your Location: "+lat+", "+lng
+
+resolve({lat,lng})
+
+})
+
+})
+
+}
+
+/* SEND SOS */
+
+async function sendSOS(){
+
+try{
+
+const loc=await getLocation()
+
+await fetch(API+"/emergency/request",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json",
+Authorization:"Bearer "+token
+},
+
+body:JSON.stringify({
+lat:loc.lat,
+lng:loc.lng,
+type:"ICU"
+})
+
+})
+
+alert("Emergency request sent!")
+
+loadStatus()
+
+}catch(err){
+
+alert("Failed to send SOS")
+
+}
+
+}
+
+/* EMERGENCY STATUS */
+
+async function loadStatus(){
+
+try{
+
+const res=await fetch(API+"/emergency/my",{
+
+headers:{
+Authorization:"Bearer "+token
+}
+
+})
+
+const data=await res.json()
+
+if(!data){
+
+document.getElementById("status").innerText="No active request"
+return
+
+}
+
+document.getElementById("status").innerText=
+"Status: "+data.status
+
+}catch(err){
+
+console.log(err)
+
+}
+
+}
+
+/* LOAD HOSPITALS */
+
+async function loadHospitals(){
+
+try{
+
+const res=await fetch(API+"/patient/hospitals",{
+
+headers:{
+Authorization:"Bearer "+token
+}
+
+})
+
+const hospitals=await res.json()
+
+let html=""
+
+hospitals.forEach(h=>{
+
+html+=`
+
+<div class="hospital-card">
+
+<b>${h.name}</b><br>
+
+City: ${h.city}<br>
+
+ICU Beds: ${h.icuBeds}
+
+</div>
+
+`
+
+})
+
+document.getElementById("hospitalList").innerHTML=html
+
+}catch(err){
+
+console.log(err)
+
+}
+
+}
+
+const socket = io("http://localhost:5000")
+
+socket.on("emergencyUpdate",(data)=>{
+
+document.getElementById("status").innerText =
+"Status: "+data.status
+
+})
+/* AUTO REFRESH */
+
+setInterval(loadStatus,5000)
+
+/* INIT */
+
+loadHospitals()
+loadStatus()
+
+</script>
+
+</body>
+
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Blood Donor Search - MedLink</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Poppins
+}
+
+body{
+background:linear-gradient(135deg,#020617,#0f172a);
+color:white;
+display:flex
+}
+
+/* SIDEBAR */
+
+.sidebar{
+width:240px;
+background:#020617;
+height:100vh;
+padding:25px;
+border-right:1px solid #1e293b
+}
+
+.sidebar h2{
+color:#38bdf8;
+margin-bottom:40px
+}
+
+.sidebar a{
+display:block;
+padding:12px;
+margin:10px 0;
+color:white;
+text-decoration:none;
+border-radius:8px
+}
+
+.sidebar a:hover{
+background:#2563eb
+}
+
+/* MAIN */
+
+.main{
+flex:1;
+padding:40px
+}
+
+/* SEARCH */
+
+.search-box{
+
+background:#0f172a;
+padding:25px;
+border-radius:12px;
+margin-bottom:30px;
+box-shadow:0 10px 25px rgba(0,0,0,0.5)
+
+}
+
+.search-box select{
+
+padding:10px;
+border:none;
+border-radius:6px;
+margin-right:10px
+
+}
+
+.search-box button{
+
+padding:10px 18px;
+background:#dc2626;
+border:none;
+border-radius:6px;
+color:white;
+cursor:pointer
+
+}
+
+/* DONOR GRID */
+
+.donor-grid{
+
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:20px
+
+}
+
+.donor-card{
+
+background:#0f172a;
+padding:20px;
+border-radius:10px;
+box-shadow:0 10px 25px rgba(0,0,0,0.5);
+cursor:pointer;
+transition:0.3s
+
+}
+
+.donor-card:hover{
+
+transform:translateY(-6px)
+
+}
+
+.donor-card h3{
+
+color:#38bdf8;
+margin-bottom:8px
+
+}
+
+.status{
+
+margin-top:8px;
+display:inline-block;
+padding:4px 10px;
+border-radius:6px;
+font-size:12px
+
+}
+
+.available{
+background:#22c55e
+}
+
+.unavailable{
+background:#ef4444
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+
+<h2>MedLink</h2>
+
+<a href="patient-dashboard.html">Dashboard</a>
+<a href="donor-search.html">Blood Donors</a>
+
+</div>
+
+<div class="main">
+
+<h1>Find Blood Donor</h1>
+
+<div class="search-box">
+
+<select id="bloodGroup">
+
+<option>Select Blood Group</option>
+<option>A+</option>
+<option>A-</option>
+<option>B+</option>
+<option>B-</option>
+<option>O+</option>
+<option>O-</option>
+<option>AB+</option>
+<option>AB-</option>
+
+</select>
+
+<button onclick="searchDonors()">
+Search
+</button>
+
+</div>
+
+<div class="donor-grid" id="donorList">
+
+<p>Select a blood group to search donors</p>
+
+</div>
+
+</div>
+
+<script>
+
+const API="http://localhost:5000/api"
+const token=localStorage.getItem("token")
+
+async function searchDonors(){
+
+const group=document.getElementById("bloodGroup").value
+
+if(!group){
+
+alert("Please select blood group")
+return
+
+}
+
+const res=await fetch(
+API+"/donors/search?bloodGroup="+group,
+{
+headers:{
+Authorization:"Bearer "+token
+}
+})
+
+const donors=await res.json()
+
+let html=""
+
+if(donors.length===0){
+
+html="<p>No donors available</p>"
+
+}else{
+
+donors.forEach(d=>{
+
+html+=`
+
+<div class="donor-card"
+onclick="viewDonor('${d._id}')">
+
+<h3>${d.user?.name || "Unknown"}</h3>
+
+<p><b>Blood:</b> ${d.bloodGroup}</p>
+
+<p><b>Phone:</b> ${d.phone || "N/A"}</p>
+
+<span class="status ${d.available?'available':'unavailable'}">
+
+${d.available?'Available':'Not Available'}
+
+</span>
+
+</div>
+
+`
+
+})
+
+}
+
+document.getElementById("donorList").innerHTML=html
+
+}
+
+function viewDonor(id){
+
+window.location="../donor/donor-profile.html?id="+id
+
+}
+
+</script>
+
+</body>
+
+</html>

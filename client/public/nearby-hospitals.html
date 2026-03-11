@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Nearby Hospitals - MedLink</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Poppins
+}
+
+body{
+display:flex;
+background:linear-gradient(135deg,#020617,#0f172a);
+color:white
+}
+
+/* SIDEBAR */
+
+.sidebar{
+width:240px;
+background:#020617;
+height:100vh;
+padding:25px;
+border-right:1px solid #1e293b
+}
+
+.sidebar h2{
+color:#38bdf8;
+margin-bottom:40px
+}
+
+.sidebar a{
+display:block;
+padding:12px;
+margin:10px 0;
+color:white;
+text-decoration:none;
+border-radius:8px
+}
+
+.sidebar a:hover{
+background:#2563eb
+}
+
+/* MAIN */
+
+.main{
+flex:1;
+padding:40px
+}
+
+/* SEARCH */
+
+.search-box{
+
+background:#0f172a;
+padding:20px;
+border-radius:12px;
+margin-bottom:30px
+
+}
+
+.search-box input{
+
+padding:10px;
+border-radius:6px;
+border:none;
+margin-right:10px
+
+}
+
+.search-box button{
+
+padding:10px 18px;
+background:#2563eb;
+border:none;
+border-radius:6px;
+color:white;
+cursor:pointer
+
+}
+
+/* HOSPITAL GRID */
+
+.hospital-grid{
+
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:20px
+
+}
+
+.hospital-card{
+
+background:#0f172a;
+padding:20px;
+border-radius:12px;
+box-shadow:0 10px 25px rgba(0,0,0,0.5);
+transition:0.3s;
+cursor:pointer
+
+}
+
+.hospital-card:hover{
+
+transform:translateY(-6px)
+
+}
+
+.hospital-card h3{
+
+color:#38bdf8;
+margin-bottom:8px
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+
+<h2>MedLink</h2>
+
+<a href="patient-dashboard.html">Dashboard</a>
+<a href="nearby-hospitals.html">Nearby Hospitals</a>
+<a href="donor-search.html">Blood Donors</a>
+<a href="my-requests.html">My Requests</a>
+<a href="patient-profile.html">Profile</a>
+
+</div>
+
+<div class="main">
+
+<h1>Nearby Hospitals</h1>
+
+<div class="search-box">
+
+<input id="citySearch" placeholder="Enter city">
+
+<button onclick="searchHospitals()">Search</button>
+
+</div>
+
+<div class="hospital-grid" id="hospitalList">
+
+<p>Loading hospitals...</p>
+
+</div>
+
+</div>
+
+<script>
+
+const API="http://localhost:5000/api"
+const token=localStorage.getItem("token")
+
+let hospitals=[]
+
+/* LOAD HOSPITALS */
+
+async function loadHospitals(){
+
+const res=await fetch(API+"/patient/hospitals",{
+
+headers:{
+Authorization:"Bearer "+token
+}
+
+})
+
+hospitals=await res.json()
+
+renderHospitals(hospitals)
+
+}
+
+/* RENDER HOSPITALS */
+
+function renderHospitals(data){
+
+let html=""
+
+if(data.length===0){
+
+html="<p>No hospitals found</p>"
+
+}else{
+
+data.forEach(h=>{
+
+html+=`
+
+<div class="hospital-card">
+
+<h3>${h.name}</h3>
+
+<p><b>City:</b> ${h.city}</p>
+
+<p><b>ICU Beds:</b> ${h.icuBeds}</p>
+
+<p><b>Doctors:</b> ${h.doctors}</p>
+
+</div>
+
+`
+
+})
+
+}
+
+document.getElementById("hospitalList").innerHTML=html
+
+}
+
+/* SEARCH */
+
+function searchHospitals(){
+
+const city=document.getElementById("citySearch").value.toLowerCase()
+
+const filtered=hospitals.filter(h=>
+h.city.toLowerCase().includes(city)
+)
+
+renderHospitals(filtered)
+
+}
+
+/* INITIAL LOAD */
+
+loadHospitals()
+
+</script>
+
+</body>
+
+</html>

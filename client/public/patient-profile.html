@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Patient Profile - MedLink</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Poppins
+}
+
+body{
+display:flex;
+background:linear-gradient(135deg,#020617,#0f172a);
+color:white
+}
+
+/* SIDEBAR */
+
+.sidebar{
+width:240px;
+background:#020617;
+height:100vh;
+padding:25px;
+border-right:1px solid #1e293b
+}
+
+.sidebar h2{
+color:#38bdf8;
+margin-bottom:40px
+}
+
+.sidebar a{
+display:block;
+padding:12px;
+margin:10px 0;
+color:white;
+text-decoration:none;
+border-radius:8px
+}
+
+.sidebar a:hover{
+background:#2563eb
+}
+
+/* MAIN */
+
+.main{
+flex:1;
+padding:40px
+}
+
+/* PROFILE CARD */
+
+.profile-card{
+
+background:#0f172a;
+padding:30px;
+border-radius:12px;
+width:400px;
+box-shadow:0 10px 25px rgba(0,0,0,0.5);
+margin-bottom:30px
+
+}
+
+.profile-card h2{
+color:#38bdf8;
+margin-bottom:20px
+}
+
+.profile-card input{
+
+width:100%;
+padding:10px;
+margin:10px 0;
+border-radius:6px;
+border:none
+
+}
+
+.profile-card button{
+
+margin-top:10px;
+padding:10px 15px;
+background:#2563eb;
+border:none;
+color:white;
+border-radius:6px;
+cursor:pointer
+
+}
+
+/* REQUEST HISTORY */
+
+.requests{
+
+background:#0f172a;
+padding:25px;
+border-radius:12px;
+box-shadow:0 10px 25px rgba(0,0,0,0.5)
+
+}
+
+.request{
+
+background:#1e293b;
+padding:12px;
+border-radius:8px;
+margin-top:10px
+
+}
+
+.status{
+
+padding:4px 8px;
+border-radius:6px;
+font-size:12px;
+margin-left:10px
+
+}
+
+.pending{
+background:#facc15;
+color:black
+}
+
+.accepted{
+background:#22c55e
+}
+
+.rejected{
+background:#ef4444
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+
+<h2>MedLink</h2>
+
+<a href="patient-dashboard.html">Dashboard</a>
+<a href="nearby-hospitals.html">Nearby Hospitals</a>
+<a href="donor-search.html">Blood Donors</a>
+<a href="my-requests.html">My Requests</a>
+<a href="patient-profile.html">Profile</a>
+
+</div>
+
+<div class="main">
+
+<h1>Patient Profile</h1>
+
+<!-- PROFILE -->
+
+<div class="profile-card">
+
+<h2>Your Details</h2>
+
+<label>Name</label>
+<input id="name">
+
+<label>Email</label>
+<input id="email" disabled>
+
+<label>City</label>
+<input id="city">
+
+<button onclick="updateProfile()">Update Profile</button>
+
+</div>
+
+<!-- REQUEST HISTORY -->
+
+<div class="requests">
+
+<h2>Emergency Request History</h2>
+
+<div id="requestList">
+
+<p>No requests found</p>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+const API="http://localhost:5000/api"
+const token=localStorage.getItem("token")
+
+/* LOAD PROFILE */
+
+async function loadProfile(){
+
+const res=await fetch(API+"/patient/profile",{
+
+headers:{
+Authorization:"Bearer "+token
+}
+
+})
+
+const user=await res.json()
+
+document.getElementById("name").value=user.name
+document.getElementById("email").value=user.email
+document.getElementById("city").value=user.city || ""
+
+}
+
+/* UPDATE PROFILE */
+
+async function updateProfile(){
+
+const name=document.getElementById("name").value
+const city=document.getElementById("city").value
+
+await fetch(API+"/patient/update-profile",{
+
+method:"PUT",
+
+headers:{
+"Content-Type":"application/json",
+Authorization:"Bearer "+token
+},
+
+body:JSON.stringify({
+name,
+city
+})
+
+})
+
+alert("Profile Updated")
+
+}
+
+/* LOAD REQUEST HISTORY */
+
+async function loadRequests(){
+
+const res=await fetch(API+"/emergency/my",{
+
+headers:{
+Authorization:"Bearer "+token
+}
+
+})
+
+const requests=await res.json()
+
+let html=""
+
+if(requests.length===0){
+
+html="<p>No emergency requests</p>"
+
+}else{
+
+requests.forEach(r=>{
+
+html+=`
+
+<div class="request">
+
+Emergency (${r.type})
+
+<span class="status ${r.status}">
+${r.status}
+</span>
+
+</div>
+
+`
+
+})
+
+}
+
+document.getElementById("requestList").innerHTML=html
+
+}
+
+/* INITIAL LOAD */
+
+loadProfile()
+loadRequests()
+
+</script>
+
+</body>
+
+</html>

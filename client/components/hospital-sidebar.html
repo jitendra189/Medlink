@@ -1,0 +1,21 @@
+<div class="sidebar">
+
+<h2>MedLink</h2>
+
+<a href="../hospital/hospital-dashboard.html">Dashboard</a>
+
+<a href="../hospital/hospital-dashboard.html#requests">Emergency Requests</a>
+
+<a href="../hospital/hospital-dashboard.html#resources">Hospital Resources</a>
+
+<a href="../auth/login.html">Logout</a>
+
+</div>
+
+<script>
+fetch("../components/patient-sidebar.html")
+.then(res=>res.text())
+.then(data=>{
+document.getElementById("sidebar").innerHTML=data
+})
+</script>

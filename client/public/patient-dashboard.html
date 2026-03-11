@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>MedLink Patient Dashboard</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+
+*{margin:0;padding:0;box-sizing:border-box;font-family:Poppins}
+
+body{display:flex;background:#f4f6fb}
+
+/* SIDEBAR */
+
+.sidebar{
+width:240px;
+background:#0f172a;
+color:white;
+height:100vh;
+padding:25px
+}
+
+.sidebar h2{margin-bottom:40px}
+
+.sidebar a{
+display:block;
+padding:12px;
+margin:10px 0;
+text-decoration:none;
+color:white;
+border-radius:8px
+}
+
+.sidebar a:hover{background:#2563eb}
+
+/* MAIN */
+
+.main{flex:1;padding:30px}
+
+/* TOPBAR */
+
+.topbar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:30px
+}
+
+.emergency{
+background:#ef4444;
+color:white;
+border:none;
+padding:12px 18px;
+border-radius:8px;
+cursor:pointer;
+font-weight:500
+}
+
+/* STATS */
+
+.stats{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:20px;
+margin-bottom:30px
+}
+
+.stat-card{
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 4px 15px rgba(0,0,0,0.05)
+}
+
+/* LOCATION */
+
+.location-box{
+background:white;
+padding:20px;
+border-radius:10px;
+margin-bottom:30px;
+box-shadow:0 4px 15px rgba(0,0,0,0.05)
+}
+
+.location-btn{
+margin-top:10px;
+padding:10px 15px;
+background:#2563eb;
+border:none;
+color:white;
+border-radius:6px;
+cursor:pointer
+}
+
+/* HOSPITAL GRID */
+
+.hospitals{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:25px;
+margin-top:20px
+}
+
+.hospital-card{
+background:white;
+border-radius:10px;
+overflow:hidden;
+box-shadow:0 6px 20px rgba(0,0,0,0.08);
+transition:0.3s;
+cursor:pointer
+}
+
+.hospital-card:hover{
+transform:translateY(-8px);
+box-shadow:0 10px 25px rgba(0,0,0,0.15)
+}
+
+.hospital-card img{
+width:100%;
+height:160px;
+object-fit:cover
+}
+
+.hospital-content{padding:15px}
+
+.hospital-content h4{margin-bottom:6px}
+
+.hospital-content p{font-size:14px;color:gray}
+
+/* BLOOD SEARCH */
+
+.blood-search{
+margin-top:30px;
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 4px 15px rgba(0,0,0,0.05)
+}
+
+.blood-search input{
+padding:10px;
+width:250px;
+border-radius:6px;
+border:1px solid #ccc
+}
+
+.blood-search button{
+padding:10px 15px;
+background:#dc2626;
+border:none;
+color:white;
+border-radius:6px;
+margin-left:10px;
+cursor:pointer
+}
+
+.donor-card{
+background:#f1f5f9;
+padding:10px;
+border-radius:6px;
+margin-top:10px
+}
+
+/* EMERGENCY STATUS */
+
+.status-box{
+margin-top:25px;
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 4px 15px rgba(0,0,0,0.05)
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+
+<h2>MedLink</h2>
+
+<a href="#">Dashboard</a>
+<a href="nearby-hospitals.html">Nearby Hospitals</a>
+<a href="donor-search.html">Blood Donors</a>
+<a href="emergency.html">Emergency</a>
+
+</div>
+
+<div class="main">
+
+<div class="topbar">
+
+<h2>Patient Dashboard</h2>
+
+<button class="emergency" onclick="sendSOS()">
+🚑 Emergency SOS
+</button>
+
+</div>
+
+<!-- STATS -->
+
+<div class="stats">
+
+<div class="stat-card">
+<h3 id="hospitalCount">0</h3>
+<p>Nearby Hospitals</p>
+</div>
+
+<div class="stat-card">
+<h3 id="donorCount">0</h3>
+<p>Blood Donors</p>
+</div>
+
+<div class="stat-card">
+<h3 id="icuCount">0</h3>
+<p>Total ICU Beds</p>
+</div>
+
+</div>
+
+<!-- LOCATION -->
+
+<div class="location-box">
+
+<h3>Find Nearby Hospitals</h3>
+
+<p>Your location will be used to detect nearby healthcare services.</p>
+
+<button class="location-btn" onclick="getLocation()">Detect My Location</button>
+
+<p id="locationResult"></p>
+
+</div>
+
+<!-- HOSPITAL LIST -->
+
+<h3>Nearby Hospitals</h3>
+
+<div class="hospitals" id="hospitalList"></div>
+
+<!-- BLOOD SEARCH -->
+
+<div class="blood-search">
+
+<h3>Search Blood Donor</h3>
+
+<input id="bloodGroup" placeholder="Enter Blood Group e.g O+">
+
+<button onclick="searchDonor()">Search</button>
+
+<div id="donorList"></div>
+
+</div>
+
+<!-- EMERGENCY STATUS -->
+
+<div class="status-box">
+
+<h3>Emergency Status</h3>
+
+<p id="emergencyStatus">No emergency request</p>
+
+</div>
+
+</div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+<script>
+
+const API="http://localhost:5000/api"
+const token=localStorage.getItem("token")
+
+if(!token){
+alert("Please login first")
+window.location.href="login.html"
+}
+
+const socket = io("http://localhost:5000")
+
+/* DASHBOARD STATS */
+
+async function loadDashboard(){
+
+const res=await fetch(API+"/patient/dashboard",{
+headers:{Authorization:"Bearer "+token}
+})
+
+const data=await res.json()
+
+document.getElementById("hospitalCount").innerText=data.totalHospitals || 0
+document.getElementById("donorCount").innerText=data.totalDonors || 0
+
+}
+
+/* LOAD HOSPITALS */
+
+async function loadHospitals(){
+
+const res=await fetch(API+"/patient/hospitals",{
+headers:{Authorization:"Bearer "+token}
+})
+
+const hospitals=await res.json()
+
+let html=""
+let icuTotal=0
+
+hospitals.forEach(h=>{
+
+icuTotal+=h.icuBeds || 0
+
+html+=`
+
+<div class="hospital-card" onclick="openHospital('${h._id}')">
+
+<img src="https://images.unsplash.com/photo-1586773860418-d37222d8fce3">
+
+<div class="hospital-content">
+
+<h4>${h.name}</h4>
+
+<p>ICU Beds: ${h.icuBeds || 0}</p>
+<p>City: ${h.city || "Unknown"}</p>
+
+</div>
+
+</div>
+
+`
+
+})
+
+document.getElementById("hospitalList").innerHTML=html
+document.getElementById("icuCount").innerText=icuTotal
+
+}
+
+/* OPEN HOSPITAL DETAILS */
+
+function openHospital(id){
+
+window.location.href="hospital-search.html?id="+id
+
+}
+
+/* BLOOD DONOR SEARCH */
+
+async function searchDonor(){
+
+const group=document.getElementById("bloodGroup").value
+
+if(!group){
+alert("Enter blood group")
+return
+}
+
+const res=await fetch(API+"/donors/search?bloodGroup="+group,{
+headers:{Authorization:"Bearer "+token}
+})
+
+const donors=await res.json()
+
+let html=""
+
+if(donors.length===0){
+
+html="<p>No donors available</p>"
+
+}else{
+
+donors.forEach(d=>{
+
+html+=`
+<div class="donor-card">
+<p><b>Name:</b> ${d.user?.name || "Unknown"}</p>
+<p><b>Blood Group:</b> ${d.bloodGroup}</p>
+<p><b>Phone:</b> ${d.phone || "N/A"}</p>
+</div>
+`
+
+})
+
+}
+
+document.getElementById("donorList").innerHTML=html
+
+}
+
+/* LOCATION */
+
+function getLocation(){
+
+navigator.geolocation.getCurrentPosition(position=>{
+
+document.getElementById("locationResult").innerHTML=
+"Latitude: "+position.coords.latitude+
+"<br>Longitude: "+position.coords.longitude
+
+})
+
+}
+
+/* SOS */
+
+async function sendSOS(){
+
+navigator.geolocation.getCurrentPosition(async position=>{
+
+await fetch(API+"/emergency/request",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json",
+Authorization:"Bearer "+token
+},
+
+body:JSON.stringify({
+lat:position.coords.latitude,
+lng:position.coords.longitude,
+type:"ICU"
+})
+
+})
+
+alert("Emergency request sent")
+
+})
+
+}
+
+/* EMERGENCY STATUS */
+
+async function loadEmergencyStatus(){
+
+const res=await fetch(API+"/emergency/my",{
+headers:{Authorization:"Bearer "+token}
+})
+
+const data=await res.json()
+
+if(!data){
+document.getElementById("emergencyStatus").innerText="No active emergency"
+return
+}
+
+document.getElementById("emergencyStatus").innerText="Status: "+data.status
+
+}
+
+/* LIVE RESOURCE UPDATE */
+
+socket.on("hospitalResourceUpdate",(hospital)=>{
+
+console.log("Live hospital update:",hospital)
+
+loadHospitals()
+
+})
+
+setInterval(loadEmergencyStatus,5000)
+
+loadDashboard()
+loadHospitals()
+loadEmergencyStatus()
+
+</script>
+
+</body>
+</html>

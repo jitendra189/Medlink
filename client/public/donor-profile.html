@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Donor Profile - MedLink</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Poppins
+}
+
+body{
+background:linear-gradient(135deg,#020617,#0f172a);
+color:white;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh
+}
+
+/* CARD */
+
+.profile-card{
+
+background:#0f172a;
+padding:40px;
+border-radius:15px;
+width:400px;
+text-align:center;
+box-shadow:0 10px 30px rgba(0,0,0,0.5)
+
+}
+
+.profile-card img{
+
+width:120px;
+height:120px;
+border-radius:50%;
+margin-bottom:15px
+
+}
+
+.profile-card h2{
+
+color:#38bdf8;
+margin-bottom:10px
+
+}
+
+.profile-card p{
+
+margin:8px 0;
+color:#cbd5f5
+
+}
+
+/* STATUS */
+
+.status{
+
+margin-top:10px;
+padding:6px 12px;
+border-radius:6px;
+display:inline-block
+
+}
+
+.available{
+background:#22c55e
+}
+
+.unavailable{
+background:#ef4444
+}
+
+/* BUTTONS */
+
+.actions{
+
+margin-top:20px
+
+}
+
+.actions button{
+
+padding:10px 20px;
+margin:5px;
+border:none;
+border-radius:6px;
+cursor:pointer
+
+}
+
+.contact-btn{
+
+background:#2563eb;
+color:white
+
+}
+
+.back-btn{
+
+background:#1e293b;
+color:white
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="profile-card">
+
+<img src="https://randomuser.me/api/portraits/men/45.jpg">
+
+<h2 id="donorName">Donor Name</h2>
+
+<p><b>Blood Group:</b> <span id="bloodGroup"></span></p>
+
+<p><b>Phone:</b> <span id="phone"></span></p>
+
+<p><b>City:</b> <span id="city"></span></p>
+
+<p>
+<b>Status:</b>
+<span id="status" class="status"></span>
+</p>
+
+<div class="actions">
+
+<button class="contact-btn" onclick="contactDonor()">
+Contact Donor
+</button>
+
+<button class="back-btn" onclick="goBack()">
+Back
+</button>
+
+</div>
+
+</div>
+
+<script>
+
+const API="http://localhost:5000/api"
+
+const params=new URLSearchParams(window.location.search)
+
+const donorId=params.get("id")
+
+async function loadDonor(){
+
+const res=await fetch(API+"/donor/"+donorId)
+
+const donor=await res.json()
+
+document.getElementById("donorName").innerText=donor.user.name
+document.getElementById("bloodGroup").innerText=donor.bloodGroup
+document.getElementById("phone").innerText=donor.phone
+document.getElementById("city").innerText=donor.city
+
+const status=document.getElementById("status")
+
+if(donor.available){
+
+status.innerText="Available"
+status.classList.add("available")
+
+}else{
+
+status.innerText="Not Available"
+status.classList.add("unavailable")
+
+}
+
+}
+
+function contactDonor(){
+
+alert("Contacting donor...")
+
+}
+
+function goBack(){
+
+history.back()
+
+}
+
+loadDonor()
+
+</script>
+
+</body>
+</html>

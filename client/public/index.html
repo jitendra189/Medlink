@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<title>MedLink - Smart Healthcare Resource Finder</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Poppins
+}
+
+body{
+background:#020617;
+color:white
+}
+
+/* NAVBAR */
+
+header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:20px 60px;
+background:#020617;
+border-bottom:1px solid #1e293b
+}
+
+header h2{
+color:#38bdf8
+}
+
+nav a{
+color:white;
+text-decoration:none;
+margin:0 15px;
+font-weight:500;
+}
+
+nav a:hover{
+color:#38bdf8
+}
+
+/* HERO */
+
+.hero{
+height:520px;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+text-align:center;
+background:linear-gradient(135deg,#0f172a,#020617)
+}
+
+.hero h1{
+font-size:48px;
+margin-bottom:10px;
+color:#38bdf8
+}
+
+.hero p{
+font-size:20px;
+margin-bottom:30px;
+color:#cbd5f5
+}
+
+.hero button{
+padding:15px 35px;
+font-size:18px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+background:#2563eb;
+color:white;
+font-weight:500;
+}
+
+.hero button:hover{
+box-shadow:0 0 10px #2563eb
+}
+
+/* ROLE BUTTONS */
+
+.roles{
+margin-top:25px;
+display:flex;
+gap:15px
+}
+
+.role-btn{
+padding:12px 22px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+background:#1e293b;
+color:white
+}
+
+.role-btn:hover{
+background:#2563eb
+}
+
+/* FEATURES */
+
+.features{
+display:flex;
+justify-content:center;
+gap:40px;
+padding:70px;
+flex-wrap:wrap
+}
+
+.card{
+background:#0f172a;
+width:260px;
+padding:30px;
+border-radius:12px;
+text-align:center;
+box-shadow:0 10px 25px rgba(0,0,0,0.5);
+transition:0.3s
+}
+
+.card:hover{
+transform:translateY(-8px)
+}
+
+.card h2{
+color:#38bdf8;
+margin-bottom:10px
+}
+
+/* SEARCH */
+
+.search-section{
+padding:70px;
+text-align:center
+}
+
+.search-section input{
+padding:12px;
+width:250px;
+border-radius:6px;
+border:none;
+margin-right:10px
+}
+
+.search-section button{
+padding:12px 20px;
+border:none;
+background:#2563eb;
+color:white;
+border-radius:6px;
+cursor:pointer
+}
+
+/* BLOOD */
+
+.blood-section{
+padding:70px;
+text-align:center
+}
+
+.blood-section select{
+padding:12px;
+width:200px;
+border-radius:6px;
+border:none;
+margin-right:10px
+}
+
+.blood-section button{
+padding:12px 20px;
+border:none;
+background:#dc2626;
+color:white;
+border-radius:6px;
+cursor:pointer
+}
+
+/* SOS */
+
+.sos-section{
+padding:70px;
+text-align:center;
+background:#020617
+}
+
+.sos-btn{
+background:#ef4444;
+color:white;
+padding:18px 35px;
+font-size:20px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+font-weight:600
+}
+
+.sos-btn:hover{
+box-shadow:0 0 15px #ef4444
+}
+
+/* HEALTH TIPS */
+
+.health-tips{
+padding:70px;
+text-align:center
+}
+
+.tips-container{
+display:flex;
+justify-content:center;
+gap:25px;
+flex-wrap:wrap;
+margin-top:30px
+}
+
+.tip-card{
+background:#0f172a;
+width:220px;
+padding:20px;
+border-radius:10px;
+box-shadow:0 10px 25px rgba(0,0,0,0.5);
+transition:0.3s
+}
+
+.tip-card:hover{
+transform:translateY(-6px)
+}
+
+/* REVIEWS */
+
+.reviews{
+padding:70px;
+text-align:center;
+font-size:20px;
+font-style:italic
+}
+
+/* FOOTER */
+
+footer{
+background:#020617;
+text-align:center;
+padding:25px;
+border-top:1px solid #1e293b
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<h2>MedLink</h2>
+
+<nav>
+<a href="index.html">Home</a>
+<a href="patient-dashboard.html">Patient</a>
+<a href="hospital-dashboard.html">Hospital</a>
+<a href="donor-dashboard.html">Donor</a>
+</nav>
+
+</header>
+
+<section class="hero">
+
+<h1>Smart Healthcare Resource Finder</h1>
+
+<p>Find nearby hospitals, blood donors and emergency help instantly</p>
+
+<button onclick="findHelp()">Find Help</button>
+
+<div class="roles">
+
+<button class="role-btn" onclick="location.href='login.html'">
+Login
+</button>
+
+<button class="role-btn" onclick="location.href='register.html'">
+Register
+</button>
+
+</div>
+
+</section>
+
+<section class="features">
+
+<div class="card">
+<h2>Find Hospitals</h2>
+<p>Search nearby hospitals and ICU availability instantly.</p>
+</div>
+
+<div class="card">
+<h2>Blood Donor Finder</h2>
+<p>Connect with nearby blood donors quickly.</p>
+</div>
+
+<div class="card">
+<h2>Emergency Help</h2>
+<p>Send SOS alerts to hospitals in seconds.</p>
+</div>
+
+</section>
+
+<section class="search-section">
+
+<h2>Find Nearby Hospitals</h2>
+
+<input type="text" id="city" placeholder="Enter City">
+
+<button onclick="searchHospital()">Search</button>
+
+<p id="hospitalResult"></p>
+
+</section>
+
+<section class="blood-section">
+
+<h2>Blood Donor Finder</h2>
+
+<select id="bloodGroup">
+
+<option>Select Blood Group</option>
+<option>A+</option>
+<option>A-</option>
+<option>B+</option>
+<option>O+</option>
+<option>AB+</option>
+
+</select>
+
+<button onclick="findDonor()">Find Donor</button>
+
+<p id="bloodResult"></p>
+
+</section>
+
+<section class="sos-section">
+
+<h2>Emergency SOS</h2>
+<p>Alert nearby hospitals instantly</p>
+
+<button class="sos-btn" onclick="goEmergency()">🚑 Call Ambulance</button></section>
+
+<section class="health-tips">
+
+<h2>Daily Health Tips</h2>
+
+<div class="tips-container">
+
+<div class="tip-card">
+<h3>💧 Stay Hydrated</h3>
+<p>Drink at least 8 glasses of water daily.</p>
+</div>
+
+<div class="tip-card">
+<h3>🚶 Exercise</h3>
+<p>Exercise for 30 minutes every day.</p>
+</div>
+
+<div class="tip-card">
+<h3>🥗 Healthy Diet</h3>
+<p>Eat fruits, vegetables and balanced meals.</p>
+</div>
+
+<div class="tip-card">
+<h3>😴 Sleep</h3>
+<p>Maintain 7-8 hours of sleep.</p>
+</div>
+
+</div>
+
+</section>
+
+<section class="reviews">
+
+<h2>What People Say</h2>
+
+<p id="reviewText">
+"MedLink helped me find blood donors instantly!"
+</p>
+
+</section>
+
+<footer>
+
+<p>© 2026 MedLink Healthcare System</p>
+
+</footer>
+
+<script>
+
+function findHelp(){
+alert("Searching nearby hospitals and emergency services...");
+}
+
+function searchHospital(){
+
+let city=document.getElementById("city").value;
+
+document.getElementById("hospitalResult").innerText=
+"Showing hospitals near "+city;
+
+}
+
+function findDonor(){
+
+let blood=document.getElementById("bloodGroup").value;
+
+document.getElementById("bloodResult").innerText=
+"Searching donors with blood group "+blood;
+
+}
+
+function goEmergency(){
+window.location.href="emergency.html"
+}
+
+/* Reviews */
+
+let reviews=[
+"MedLink helped me find blood donors instantly!",
+"I located the nearest hospital within seconds.",
+"Very useful platform during medical emergencies.",
+"Easy to use and very helpful service."
+];
+
+let index=0;
+
+setInterval(function(){
+
+index++;
+
+if(index>=reviews.length){
+index=0;
+}
+
+document.getElementById("reviewText").innerText=reviews[index];
+
+},3000);
+
+</script>
+
+</body>
+</html>

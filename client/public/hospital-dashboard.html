@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>MedLink Hospital Dashboard</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Poppins;
+}
+
+body{
+display:flex;
+background:#f4f6fb;
+}
+
+/* SIDEBAR */
+
+.sidebar{
+width:240px;
+background:linear-gradient(180deg,#0f172a,#1e293b);
+color:white;
+height:100vh;
+padding:25px;
+}
+
+.sidebar h2{
+margin-bottom:40px;
+}
+
+.sidebar a{
+display:block;
+padding:12px;
+margin:12px 0;
+text-decoration:none;
+color:white;
+border-radius:8px;
+transition:0.3s;
+}
+
+.sidebar a:hover{
+background:#22c55e;
+}
+
+/* MAIN */
+
+.main{
+flex:1;
+padding:30px;
+}
+
+/* TOPBAR */
+
+.topbar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:30px;
+}
+
+.profile{
+display:flex;
+align-items:center;
+gap:15px;
+}
+
+.profile img{
+width:40px;
+height:40px;
+border-radius:50%;
+}
+
+/* STATS */
+
+.stats{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:20px;
+margin-bottom:30px;
+}
+
+.stat-card{
+background:white;
+padding:20px;
+border-radius:12px;
+box-shadow:0 6px 20px rgba(0,0,0,0.05);
+}
+
+/* GRID */
+
+.grid{
+display:grid;
+grid-template-columns:2fr 1fr;
+gap:25px;
+}
+
+/* RESOURCE PANEL */
+
+.resources{
+background:white;
+padding:25px;
+border-radius:12px;
+box-shadow:0 6px 20px rgba(0,0,0,0.05);
+}
+
+.resources input{
+width:100%;
+padding:10px;
+margin-top:10px;
+border-radius:6px;
+border:1px solid #ccc;
+}
+
+.resources button{
+margin-top:15px;
+padding:12px;
+background:#22c55e;
+border:none;
+color:white;
+border-radius:6px;
+cursor:pointer;
+}
+
+/* REQUESTS */
+
+.requests{
+background:white;
+padding:20px;
+border-radius:12px;
+box-shadow:0 6px 20px rgba(0,0,0,0.05);
+}
+
+.request{
+background:#fee2e2;
+padding:12px;
+border-radius:8px;
+margin-top:10px;
+}
+
+/* ACTIVITY */
+
+.activity{
+margin-top:25px;
+background:white;
+padding:20px;
+border-radius:12px;
+box-shadow:0 6px 20px rgba(0,0,0,0.05);
+}
+
+.activity-item{
+padding:10px 0;
+border-bottom:1px solid #eee;
+}
+
+/* FOOTER */
+
+.footer{
+margin-top:30px;
+background:#0f172a;
+color:white;
+padding:20px;
+border-radius:10px;
+text-align:center;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+
+<h2>MedLink</h2>
+
+<a href="#">Dashboard</a>
+<a href="#">Hospital Resources</a>
+<a href="#">Emergency Requests</a>
+
+</div>
+
+<div class="main">
+
+<div class="topbar">
+
+<h2>Hospital Control Center</h2>
+
+<div class="profile">
+
+<img src="https://randomuser.me/api/portraits/men/32.jpg">
+
+<p>Hospital Admin</p>
+
+</div>
+
+</div>
+
+<!-- STATS -->
+
+<div class="stats">
+
+<div class="stat-card">
+<h3 id="icuBeds">0</h3>
+<p>ICU Beds Available</p>
+</div>
+
+<div class="stat-card">
+<h3 id="doctors">0</h3>
+<p>Doctors On Duty</p>
+</div>
+
+<div class="stat-card">
+<h3 id="ambulances">0</h3>
+<p>Ambulances</p>
+</div>
+
+<div class="stat-card">
+<h3 id="patients">0</h3>
+<p>Emergency Requests</p>
+</div>
+
+</div>
+
+<div class="grid">
+
+<div>
+
+<div class="resources">
+
+<h3>Update Hospital Resources</h3>
+
+<label>ICU Beds</label>
+<input id="icuInput" placeholder="Enter ICU beds">
+
+<label>Doctors Available</label>
+<input id="doctorInput" placeholder="Doctors on duty">
+
+<label>Ambulances</label>
+<input id="ambulanceInput" placeholder="Ambulances">
+
+<button onclick="updateResources()">Update Resources</button>
+
+</div>
+
+<div class="activity">
+
+<h3>Recent Activity</h3>
+
+<div class="activity-item">
+Hospital dashboard loaded
+</div>
+
+<div class="activity-item">
+Resource updates will appear here
+</div>
+
+</div>
+
+</div>
+
+<div>
+
+<div class="request">
+
+<p>🚑 Emergency ICU Request</p>
+
+<button onclick="acceptRequest('${r._id}')">Accept</button>
+
+<button onclick="rejectRequest('${r._id}')">Reject</button>
+
+</div>
+</div>
+
+</div>
+
+<div class="footer">
+
+<p>MedLink Smart Healthcare Resource System</p>
+<p>Real-time hospital resource management</p>
+
+</div>
+
+</div>
+
+<script>
+
+const API="http://localhost:5000/api"
+const token=localStorage.getItem("token")
+
+/* LOAD HOSPITAL DASHBOARD */
+
+async function loadHospital(){
+
+const res=await fetch(API+"/hospital/dashboard",{
+
+headers:{
+Authorization:"Bearer "+token
+}
+
+})
+
+const data=await res.json()
+
+document.getElementById("icuBeds").innerText=data.icuBeds || 0
+document.getElementById("doctors").innerText=data.doctors || 0
+document.getElementById("ambulances").innerText=data.ambulances || 0
+
+}
+
+/* EMERGENCY REQUESTS */
+
+async function loadRequests(){
+
+const res = await fetch(
+"http://localhost:5000/api/emergency/requests",
+{
+headers:{
+Authorization:"Bearer "+localStorage.getItem("token")
+}
+})
+
+const requests = await res.json()
+
+let html=""
+
+requests.forEach(r=>{
+
+html+=`
+<div class="request">
+🚑 Emergency (${r.type})<br>
+Patient: ${r.patient.name}<br>
+Location: ${r.location.lat}, ${r.location.lng}
+</div>
+`
+
+})
+
+document.getElementById("requestList").innerHTML=html
+
+}
+
+loadRequests()
+
+async function acceptRequest(id){
+
+await fetch(
+"http://localhost:5000/api/emergency/accept/"+id,
+{
+method:"PUT",
+headers:{
+Authorization:"Bearer "+localStorage.getItem("token")
+}
+})
+
+alert("Emergency Accepted")
+
+loadRequests()
+
+}
+
+
+async function rejectRequest(id){
+
+await fetch(
+"http://localhost:5000/api/emergency/reject/"+id,
+{
+method:"PUT",
+headers:{
+Authorization:"Bearer "+localStorage.getItem("token")
+}
+})
+
+alert("Emergency Rejected")
+
+loadRequests()
+
+}
+
+const socket = io("http://localhost:5000")
+
+socket.on("newEmergency",(data)=>{
+
+alert("🚑 New Emergency Request!")
+
+loadRequests()
+
+})
+
+/* UPDATE RESOURCES */
+
+async function updateResources(){
+
+const icu=document.getElementById("icuInput").value
+const doctors=document.getElementById("doctorInput").value
+const ambulances=document.getElementById("ambulanceInput").value
+
+await fetch(API+"/hospital/update-resources",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json",
+Authorization:"Bearer "+token
+},
+
+body:JSON.stringify({
+icuBeds:icu,
+doctors:doctors,
+ambulances:ambulances
+})
+
+})
+
+alert("Resources Updated Successfully")
+
+loadHospital()
+
+}
+
+loadHospital()
+
+</script>
+
+</body>
+
+</html>
