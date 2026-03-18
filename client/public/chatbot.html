@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<title>MedLink First Aid Assistant</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+
+body{
+font-family:'Poppins',sans-serif;
+margin:0;
+background:linear-gradient(135deg,#ecfeff,#cffafe);
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+/* MAIN CARD */
+
+.container{
+width:520px;
+background:white;
+padding:35px;
+border-radius:14px;
+box-shadow:0 15px 35px rgba(0,0,0,0.15);
+}
+
+/* HEADER */
+
+.header{
+text-align:center;
+margin-bottom:20px;
+}
+
+.header h1{
+margin:0;
+color:#0f766e;
+}
+
+.header p{
+color:#555;
+font-size:14px;
+}
+
+/* CHAT AREA */
+
+.chatbox{
+background:#f0fdfa;
+padding:20px;
+border-radius:10px;
+height:250px;
+overflow-y:auto;
+border:1px solid #d1fae5;
+margin-bottom:15px;
+}
+
+/* MESSAGES */
+
+.bot{
+background:#ccfbf1;
+padding:10px 12px;
+border-radius:8px;
+margin-bottom:8px;
+}
+
+.user{
+background:#0f766e;
+color:white;
+padding:10px 12px;
+border-radius:8px;
+margin-bottom:8px;
+text-align:right;
+}
+
+/* INPUT AREA */
+
+.input-area{
+display:flex;
+gap:10px;
+}
+
+input{
+flex:1;
+padding:12px;
+border-radius:8px;
+border:1px solid #ccc;
+}
+
+button{
+padding:12px 18px;
+border:none;
+background:#0f766e;
+color:white;
+border-radius:8px;
+cursor:pointer;
+}
+
+button:hover{
+background:#115e59;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+<h1>MedLink First Aid Guide</h1>
+<p>Describe an emergency to receive first aid steps</p>
+</div>
+
+<div id="chatbox" class="chatbox">
+
+<div class="bot">
+Hello 👋 I am MedLink First Aid Assistant.<br>
+Tell me the emergency situation (example: burn, bleeding, choking).
+</div>
+
+</div>
+
+<div class="input-area">
+
+<input type="text" id="userInput" placeholder="Describe the emergency">
+
+<button onclick="sendMessage()">Send</button>
+
+</div>
+
+</div>
+
+
+<script>
+
+function sendMessage(){
+
+let input=document.getElementById("userInput");
+let text=input.value.toLowerCase().trim();
+
+if(text==="") return;
+
+let chat=document.getElementById("chatbox");
+
+/* SHOW USER MESSAGE */
+
+chat.innerHTML += `<div class="user">${text}</div>`;
+
+/* FIRST AID DATABASE */
+
+let reply="";
+
+if(text.includes("faint") || text.includes("unconscious")){
+
+reply = `
+<b>First Aid for Fainting</b><br>
+• Lay the person flat on their back<br>
+• Raise their legs slightly<br>
+• Loosen tight clothing<br>
+• Ensure fresh air<br>
+• If unconscious for 1 minute call emergency services
+`;
+
+}
+
+else if(text.includes("bleeding")){
+
+reply = `
+<b>First Aid for Bleeding</b><br>
+• Apply firm pressure on the wound<br>
+• Use clean cloth or bandage<br>
+• Elevate injured area if possible<br>
+• Do not remove objects stuck in wound<br>
+• Seek medical help if bleeding continues
+`;
+
+}
+
+else if(text.includes("burn")){
+
+reply = `
+<b>First Aid for Burns</b><br>
+• Cool the burn under running water for 10 minutes<br>
+• Do not apply ice<br>
+• Cover burn with sterile cloth<br>
+• Avoid bursting blisters<br>
+• Seek medical help if severe
+`;
+
+}
+
+else if(text.includes("choking")){
+
+reply = `
+<b>First Aid for Choking</b><br>
+• Encourage coughing<br>
+• Perform Heimlich maneuver<br>
+• Give abdominal thrusts<br>
+• Call emergency services immediately
+`;
+
+}
+
+else if(text.includes("fracture") || text.includes("broken")){
+
+reply = `
+<b>First Aid for Fracture</b><br>
+• Immobilize the injured area<br>
+• Apply a splint if available<br>
+• Apply ice pack to reduce swelling<br>
+• Avoid moving the limb<br>
+• Seek medical attention immediately
+`;
+
+}
+
+else{
+
+reply = `
+⚠️ First aid instructions not found.<br>
+Please contact emergency services or visit nearest hospital.
+`;
+
+}
+
+/* SHOW BOT MESSAGE */
+
+chat.innerHTML += `<div class="bot">${reply}</div>`;
+
+/* CLEAR INPUT */
+
+input.value="";
+
+/* AUTO SCROLL */
+
+chat.scrollTop = chat.scrollHeight;
+
+}
+
+</script>
+
+</body>
+</html>

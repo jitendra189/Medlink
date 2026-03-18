@@ -3,7 +3,7 @@
 
 <head>
 
-<title>Hospital Details</title>
+<title>Hospital Search - MedLink</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 
@@ -14,6 +14,10 @@ font-family:Poppins;
 background:#020617;
 color:white;
 padding:40px
+}
+
+h1{
+margin-bottom:20px
 }
 
 .card{
@@ -29,7 +33,12 @@ background:#ef4444;
 border:none;
 color:white;
 border-radius:6px;
-cursor:pointer
+cursor:pointer;
+margin-top:10px
+}
+
+button:hover{
+background:#dc2626
 }
 
 </style>
@@ -38,47 +47,9 @@ cursor:pointer
 
 <body>
 
-<h1 id="hospitalName"></h1>
+<h1 id="pageTitle">Hospitals</h1>
 
-<div class="card">
-
-<p id="hospitalCity"></p>
-<p id="hospitalContact"></p>
-<p id="hospitalEmail"></p>
-
-</div>
-
-
-<div class="card">
-
-<h3>Resources</h3>
-
-<p>ICU Beds: <span id="icuBeds"></span></p>
-<p>Doctors: <span id="doctorCount"></span></p>
-<p>Ambulances: <span id="ambulanceCount"></span></p>
-
-</div>
-
-
-<div class="card">
-
-<h3>Doctors</h3>
-
-<div id="doctorList"></div>
-
-</div>
-
-
-<div class="card">
-
-<h3>Emergency</h3>
-
-<button onclick="requestICU()">Request ICU</button>
-
-<button onclick="sendSOS()">Emergency SOS</button>
-
-</div>
-
+<div id="hospitalContainer"></div>
 
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
@@ -91,12 +62,64 @@ const token=localStorage.getItem("token")
 const params = new URLSearchParams(window.location.search)
 
 const hospitalId = params.get("id")
+const city = params.get("city")
 
 const socket = io("http://localhost:5000")
 
-/* ======================
-   LOAD HOSPITAL DETAILS
-====================== */
+/* ============================
+   LOAD HOSPITALS BY CITY
+============================ */
+
+async function loadHospitalsByCity(){
+
+document.getElementById("pageTitle").innerText="Hospitals in " + city
+
+const res = await fetch(API+"/hospitals/search?name="+city,{
+headers:{Authorization:"Bearer "+token}
+})
+
+const hospitals = await res.json()
+
+let html=""
+
+if(hospitals.length===0){
+
+html="<p>No hospitals found</p>"
+
+}else{
+
+hospitals.forEach(h=>{
+
+html+=`
+
+<div class="card">
+
+<h2>${h.name}</h2>
+
+<p>City: ${h.city}</p>
+<p>ICU Beds: ${h.icuBeds}</p>
+<p>Doctors: ${h.doctors}</p>
+<p>Ambulances: ${h.ambulances}</p>
+
+<button onclick="openHospital('${h._id}')">
+View Details
+</button>
+
+</div>
+
+`
+
+})
+
+}
+
+document.getElementById("hospitalContainer").innerHTML=html
+
+}
+
+/* ============================
+   LOAD SINGLE HOSPITAL
+============================ */
 
 async function loadHospital(){
 
@@ -106,34 +129,57 @@ headers:{Authorization:"Bearer "+token}
 
 const hospital = await res.json()
 
-document.getElementById("hospitalName").innerText=hospital.name
-document.getElementById("hospitalCity").innerText="City: "+hospital.city
-document.getElementById("hospitalContact").innerText="Contact: "+(hospital.contact || "N/A")
-document.getElementById("hospitalEmail").innerText="Email: "+(hospital.email || "N/A")
+let html = `
+
+<div class="card">
+
+<h1>${hospital.name}</h1>
+
+<p>City: ${hospital.city}</p>
+<p>Contact: ${hospital.contact || "N/A"}</p>
+<p>Email: ${hospital.email || "N/A"}</p>
+
+</div>
+
+<div class="card">
+
+<h3>Resources</h3>
+
+<p>ICU Beds: <span id="icuBeds">${hospital.icuBeds}</span></p>
+<p>Doctors: <span id="doctorCount">${hospital.doctors}</span></p>
+<p>Ambulances: <span id="ambulanceCount">${hospital.ambulances}</span></p>
+
+</div>
+
+<div class="card">
+
+<h3>Doctors</h3>
+
+<div id="doctorList"></div>
+
+</div>
+
+<div class="card">
+
+<h3>Emergency</h3>
+
+<button onclick="requestICU()">Request ICU</button>
+
+<button onclick="sendSOS()">Emergency SOS</button>
+
+</div>
+
+`
+
+document.getElementById("hospitalContainer").innerHTML=html
+
+loadDoctors()
 
 }
 
-/* ======================
-   LOAD RESOURCES
-====================== */
-
-async function loadResources(){
-
-const res = await fetch(API+"/hospitals/"+hospitalId+"/resources",{
-headers:{Authorization:"Bearer "+token}
-})
-
-const data = await res.json()
-
-document.getElementById("icuBeds").innerText=data.icuBeds
-document.getElementById("doctorCount").innerText=data.doctors
-document.getElementById("ambulanceCount").innerText=data.ambulances
-
-}
-
-/* ======================
+/* ============================
    LOAD DOCTORS
-====================== */
+============================ */
 
 async function loadDoctors(){
 
@@ -148,9 +194,7 @@ let html=""
 doctors.forEach(d=>{
 
 html+=`
-<p>
-${d.name} - ${d.specialization} (${d.availability})
-</p>
+<p>${d.name} - ${d.specialization} (${d.availability})</p>
 `
 
 })
@@ -159,9 +203,19 @@ document.getElementById("doctorList").innerHTML=html
 
 }
 
-/* ======================
-   EMERGENCY REQUEST
-====================== */
+/* ============================
+   REDIRECT TO DETAILS
+============================ */
+
+function openHospital(id){
+
+window.location.href="hospital-search.html?id="+id
+
+}
+
+/* ============================
+   ICU REQUEST
+============================ */
 
 async function requestICU(){
 
@@ -190,9 +244,9 @@ alert("ICU request sent")
 
 }
 
-/* ======================
-   SOS
-====================== */
+/* ============================
+   EMERGENCY SOS
+============================ */
 
 async function sendSOS(){
 
@@ -221,9 +275,9 @@ alert("Emergency request sent")
 
 }
 
-/* ======================
-   SOCKET LIVE UPDATE
-====================== */
+/* ============================
+   REALTIME RESOURCE UPDATE
+============================ */
 
 socket.on("hospitalResourceUpdate",(data)=>{
 
@@ -237,10 +291,19 @@ document.getElementById("ambulanceCount").innerText=data.ambulances
 
 })
 
+/* ============================
+   PAGE LOAD LOGIC
+============================ */
+
+if(city){
+
+loadHospitalsByCity()
+
+}else if(hospitalId){
 
 loadHospital()
-loadResources()
-loadDoctors()
+
+}
 
 </script>
 

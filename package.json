@@ -1,0 +1,23 @@
+{
+  "name": "medlink",
+  "version": "1.0.0",
+  "description": "MedLink Hackathon Project",
+  "main": "server.js",
+  "scripts": {
+  "start": "node server/server.js",
+  "dev": "nodemon server/server.js"
+},
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "mongoose": "^8.3.2",
+    "dotenv": "^16.4.5",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

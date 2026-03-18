@@ -1,4 +1,5 @@
 const Emergency = require("../models/EmergencyRequest")
+const Hospital = require("../models/Hospital")
 
 /* =========================
    CREATE EMERGENCY (PATIENT SOS)
@@ -16,6 +17,12 @@ location:{lat,lng},
 status:"pending"
 })
 
+/* REALTIME EVENT */
+
+if(global.io){
+global.io.emit("newEmergency",emergency)
+}
+
 res.json({
 message:"Emergency request sent",
 emergency
@@ -28,14 +35,15 @@ res.status(500).json({error:error.message})
 
 
 /* =========================
-   GET ALL EMERGENCIES (HOSPITAL)
+   GET ALL EMERGENCIES (HOSPITAL DASHBOARD)
 ========================= */
 
 exports.getEmergencies = async (req,res)=>{
 try{
 
-const emergencies = await Emergency.find()
+const emergencies = await Emergency.find({status:"pending"})
 .populate("patient","name email")
+.populate("hospital","name")
 .sort({createdAt:-1})
 
 res.json(emergencies)
@@ -53,11 +61,26 @@ res.status(500).json({error:error.message})
 exports.acceptEmergency = async (req,res)=>{
 try{
 
-const emergency = await Emergency.findByIdAndUpdate(
-req.params.id,
-{status:"accepted"},
-{new:true}
-)
+const hospital = await Hospital.findOne({
+admin:req.user.id
+})
+
+const emergency = await Emergency.findById(req.params.id)
+
+if(!emergency){
+return res.status(404).json({message:"Emergency not found"})
+}
+
+emergency.status="accepted"
+emergency.hospital=hospital._id
+
+await emergency.save()
+
+/* REALTIME UPDATE */
+
+if(global.io){
+global.io.emit("emergencyUpdated",emergency)
+}
 
 res.json({
 message:"Emergency accepted",
@@ -77,11 +100,19 @@ res.status(500).json({error:error.message})
 exports.rejectEmergency = async (req,res)=>{
 try{
 
-const emergency = await Emergency.findByIdAndUpdate(
-req.params.id,
-{status:"rejected"},
-{new:true}
-)
+const emergency = await Emergency.findById(req.params.id)
+
+if(!emergency){
+return res.status(404).json({message:"Emergency not found"})
+}
+
+emergency.status="rejected"
+
+await emergency.save()
+
+if(global.io){
+global.io.emit("emergencyUpdated",emergency)
+}
 
 res.json({
 message:"Emergency rejected",
@@ -95,17 +126,53 @@ res.status(500).json({error:error.message})
 
 
 /* =========================
-   PATIENT CHECK STATUS
+   GET MY REQUESTS (PATIENT)
 ========================= */
 
-exports.getMyEmergency = async (req,res)=>{
+exports.getMyEmergencies = async (req,res)=>{
+try{
+
+const emergencies = await Emergency.find({
+patient:req.user.id
+})
+.populate("hospital","name")
+.sort({createdAt:-1})
+
+res.json(emergencies)
+
+}catch(error){
+res.status(500).json({error:error.message})
+}
+}
+
+
+/* =========================
+   CANCEL REQUEST (PATIENT)
+========================= */
+
+exports.cancelEmergency = async (req,res)=>{
 try{
 
 const emergency = await Emergency.findOne({
+_id:req.params.id,
 patient:req.user.id
-}).sort({createdAt:-1})
+})
 
-res.json(emergency)
+if(!emergency){
+return res.status(404).json({message:"Emergency not found"})
+}
+
+emergency.status="cancelled"
+
+await emergency.save()
+
+if(global.io){
+global.io.emit("emergencyUpdated",emergency)
+}
+
+res.json({
+message:"Emergency request cancelled"
+})
 
 }catch(error){
 res.status(500).json({error:error.message})

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Doctor Dashboard | MedLink</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f1f5f9;
+margin:0;
+}
+
+.container{
+max-width:900px;
+margin:60px auto;
+background:white;
+padding:40px;
+border-radius:12px;
+box-shadow:0 10px 30px rgba(0,0,0,0.1);
+}
+
+h1{
+text-align:center;
+color:#0f766e;
+}
+
+button{
+display:block;
+margin:30px auto;
+padding:14px 28px;
+border:none;
+background:#0f766e;
+color:white;
+font-size:18px;
+border-radius:8px;
+cursor:pointer;
+}
+
+button:hover{
+background:#115e59;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>MedLink Doctor Dashboard</h1>
+
+<button onclick="goAppointments()">
+View Today's Appointments
+</button>
+
+</div>
+
+<script>
+
+function goAppointments(){
+
+window.location.href="doctor-appointment.html";
+
+}
+
+</script>
+
+</body>
+</html>

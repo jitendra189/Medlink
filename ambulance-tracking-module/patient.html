@@ -1,0 +1,149 @@
+<!DOCTYPE html><html>
+<head>
+<title>MedLink Ambulance Tracking</title><style>
+
+body{
+margin:0;
+font-family: 'Segoe UI', sans-serif;
+background:#f5f7fb;
+}
+
+/* Map */
+
+#map{
+height:100vh;
+width:100%;
+}
+
+/* Navbar */
+
+.navbar{
+position:absolute;
+top:0;
+left:0;
+right:0;
+height:65px;
+background:white;
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:0 25px;
+box-shadow:0 3px 10px rgba(0,0,0,0.1);
+z-index:10;
+}
+
+.logo{
+font-size:22px;
+font-weight:600;
+color:#e63946;
+}
+
+.status{
+font-size:14px;
+background:#e8f5e9;
+color:#2e7d32;
+padding:6px 12px;
+border-radius:20px;
+}
+
+/* Tracking Card */
+
+.tracking-card{
+position:absolute;
+bottom:30px;
+left:30px;
+width:340px;
+background:white;
+border-radius:14px;
+box-shadow:0 10px 25px rgba(0,0,0,0.15);
+padding:22px;
+z-index:10;
+}
+
+.card-title{
+font-size:18px;
+font-weight:600;
+margin-bottom:15px;
+}
+
+/* Driver section */
+
+.driver{
+display:flex;
+align-items:center;
+margin-bottom:15px;
+}
+
+.driver img{
+width:50px;
+height:50px;
+border-radius:50%;
+margin-right:10px;
+}
+
+.driver-name{
+font-weight:600;
+}
+
+.driver-phone{
+font-size:13px;
+color:#777;
+}
+
+/* Info rows */
+
+.info{
+display:flex;
+justify-content:space-between;
+margin:10px 0;
+font-size:14px;
+}
+
+/* Buttons */
+
+button{
+width:100%;
+padding:12px;
+border:none;
+border-radius:8px;
+font-size:15px;
+cursor:pointer;
+margin-top:10px;
+}
+
+.request{
+background:#e63946;
+color:white;
+}
+
+.call{
+background:#2a9d8f;
+color:white;
+}
+
+</style></head><body><div class="navbar">
+<div class="logo">🚑 MedLink</div>
+<div class="status">Ambulance On The Way</div>
+</div><div id="map"></div><div class="tracking-card"><div class="card-title">Live Ambulance Tracking</div><div class="driver">
+<img src="https://i.pravatar.cc/100" />
+<div>
+<div class="driver-name">Ravi Kumar</div>
+<div class="driver-phone">+91 9876543210</div>
+</div>
+</div><div class="info">
+<span>Distance</span>
+<span id="distance">--</span>
+</div><div class="info">
+<span>ETA</span>
+<span id="eta">--</span>
+</div><div class="info">
+<span>Ambulance ID</span>
+<span>AMB-102</span>
+</div><button class="request" onclick="requestAmbulance()">🚨 Request Ambulance</button>
+
+<button class="call">📞 Call Driver</button>
+
+</div><script src="patient-app.js"></script><script async
+src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBS6zJCGAiMvnmloTquuM8ya6lGZRL4I4I&callback=initMap">
+</script></body>
+</html>

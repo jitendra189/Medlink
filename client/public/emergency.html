@@ -4,7 +4,9 @@
 <head>
 
 <meta charset="UTF-8">
-<title>Emergency SOS - MedLink</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>MedLink Emergency Assistance</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 
@@ -14,57 +16,135 @@
 margin:0;
 padding:0;
 box-sizing:border-box;
-font-family:Poppins
+font-family:Poppins;
 }
 
 body{
-background:linear-gradient(135deg,#020617,#0f172a);
-color:white;
-padding:40px
+background:#f4f6fb;
+padding:30px;
 }
 
-.container{
-max-width:900px;
-margin:auto
+/* HEADER */
+
+.header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:30px;
 }
 
-h1{
-color:#38bdf8;
-margin-bottom:20px
+.header h2{
+color:#dc2626;
 }
+
+/* GRID */
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+gap:25px;
+margin-bottom:30px;
+}
+
+/* CARD */
 
 .card{
-background:#0f172a;
-padding:25px;
+background:white;
+padding:30px;
 border-radius:12px;
-margin-bottom:20px;
-box-shadow:0 10px 25px rgba(0,0,0,0.5)
+text-align:center;
+box-shadow:0 6px 20px rgba(0,0,0,0.08);
+transition:0.3s;
+}
+
+.card:hover{
+transform:translateY(-6px);
+}
+
+.card h3{
+margin-bottom:10px;
+}
+
+.card p{
+font-size:14px;
+color:#555;
+margin-bottom:15px;
 }
 
 button{
-padding:14px 24px;
-background:#ef4444;
+padding:10px 16px;
 border:none;
-border-radius:8px;
+border-radius:6px;
+background:#dc2626;
 color:white;
-font-size:16px;
-cursor:pointer
+cursor:pointer;
+font-weight:500;
 }
 
 button:hover{
-background:#dc2626
+background:#b91c1c;
 }
 
-.status{
+/* LOCATION */
+
+.location{
+background:white;
+padding:20px;
+border-radius:12px;
+box-shadow:0 6px 20px rgba(0,0,0,0.08);
+margin-bottom:30px;
+}
+
+.location p{
 margin-top:10px;
-font-weight:500
+}
+
+/* HOSPITAL LIST */
+
+.hospitals{
+background:white;
+padding:20px;
+border-radius:12px;
+box-shadow:0 6px 20px rgba(0,0,0,0.08);
+margin-bottom:30px;
 }
 
 .hospital-card{
-background:#020617;
-padding:15px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:15px 0;
+border-bottom:1px solid #eee;
+}
+
+.hospital-card:last-child{
+border-bottom:none;
+}
+
+.hospital-card button{
+background:#2563eb;
+}
+
+/* STATUS */
+
+.status{
 margin-top:10px;
-border-radius:8px
+font-weight:500;
+color:#2563eb;
+}
+
+/* FOOTER */
+
+.footer{
+background:#111827;
+color:white;
+padding:25px;
+border-radius:12px;
+text-align:center;
+}
+
+.footer p{
+font-size:14px;
 }
 
 </style>
@@ -73,81 +153,133 @@ border-radius:8px
 
 <body>
 
-<div class="container">
+<div class="header">
+<h2>🚨 Emergency Assistance</h2>
+<p>Get instant healthcare help</p>
+</div>
 
-<h1>🚑 Emergency SOS</h1>
+<div class="grid">
 
 <div class="card">
-
-<h3>Send Emergency Request</h3>
-
-<p>Your location will be shared with nearby hospitals.</p>
-
-<button onclick="sendSOS()">Send SOS Request</button>
-
-<p id="location"></p>
-
+<h3>🚑 Request Ambulance</h3>
+<p>Send ambulance to your current location instantly.</p>
+<button onclick="requestAmbulance()">Request</button>
 <p class="status" id="status">No emergency request</p>
-
 </div>
 
 <div class="card">
+<h3>🩸 Emergency Blood Alert</h3>
+<p>Notify nearby donors for urgent blood requirement.</p>
+<button onclick="bloodAlert()">Send Alert</button>
+</div>
 
-<h3>Nearby Hospitals</h3>
+<div class="card">
+<h3>🏥 Find ICU Beds</h3>
+<p>Locate hospitals with available ICU beds nearby.</p>
+<button onclick="findICU()">Search</button>
+</div>
+
+</div>
+
+<div class="location">
+
+<h3>📍 Share Your Location</h3>
+
+<button onclick="shareLocation()">Share Location</button>
+
+<p id="loc">Location not shared</p>
+
+</div>
+
+<div class="hospitals">
+
+<h3>Nearby Emergency Hospitals</h3>
 
 <div id="hospitalList">
-
-Loading hospitals...
-
+<p>Please share your location to load hospitals</p>
 </div>
 
 </div>
 
+<div class="footer">
+
+<p>Emergency Contacts | Ambulance: 108 | Blood Helpline: 104</p>
+<p>© 2026 MedLink Healthcare Network</p>
+
 </div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
 <script>
 
 const API="http://localhost:5000/api"
-
 const token=localStorage.getItem("token")
 
-/* LOCATION */
+if(!token){
+alert("Please login first")
+window.location.href="login.html"
+}
+
+let userLat=null
+let userLng=null
+
+/* GET LOCATION */
 
 function getLocation(){
 
 return new Promise((resolve,reject)=>{
 
 if(!navigator.geolocation){
-
-reject("Location not supported")
-
+reject("Geolocation not supported")
+return
 }
 
 navigator.geolocation.getCurrentPosition(position=>{
 
-const lat=position.coords.latitude
-const lng=position.coords.longitude
+userLat=position.coords.latitude
+userLng=position.coords.longitude
 
-document.getElementById("location").innerHTML=
-"Your Location: "+lat+", "+lng
+document.getElementById("loc").innerText =
+"Latitude: "+userLat.toFixed(4)+" | Longitude: "+userLng.toFixed(4)
 
-resolve({lat,lng})
+resolve({lat:userLat,lng:userLng})
 
+},error=>{
+reject(error)
 })
 
 })
 
 }
 
-/* SEND SOS */
+/* SHARE LOCATION */
 
-async function sendSOS(){
+async function shareLocation(){
 
 try{
 
-const loc=await getLocation()
+await getLocation()
+loadNearbyHospitals()
 
-await fetch(API+"/emergency/request",{
+}catch(err){
+
+alert("Location access failed")
+
+}
+
+}
+
+/* REQUEST AMBULANCE */
+
+async function requestAmbulance(){
+
+try{
+
+if(!userLat){
+await getLocation()
+}
+
+const res=await fetch(API+"/emergency/request",{
 
 method:"POST",
 
@@ -157,88 +289,120 @@ Authorization:"Bearer "+token
 },
 
 body:JSON.stringify({
-lat:loc.lat,
-lng:loc.lng,
-type:"ICU"
+lat:userLat,
+lng:userLng,
+type:"Ambulance"
 })
-
-})
-
-alert("Emergency request sent!")
-
-loadStatus()
-
-}catch(err){
-
-alert("Failed to send SOS")
-
-}
-
-}
-
-/* EMERGENCY STATUS */
-
-async function loadStatus(){
-
-try{
-
-const res=await fetch(API+"/emergency/my",{
-
-headers:{
-Authorization:"Bearer "+token
-}
 
 })
 
 const data=await res.json()
 
-if(!data){
+alert(data.message || "Emergency request sent")
 
-document.getElementById("status").innerText="No active request"
-return
-
-}
-
-document.getElementById("status").innerText=
-"Status: "+data.status
+loadEmergencyStatus()
 
 }catch(err){
 
-console.log(err)
+alert("Failed to send emergency request")
 
 }
 
 }
 
-/* LOAD HOSPITALS */
+/* BLOOD ALERT */
 
-async function loadHospitals(){
+function bloodAlert(){
+
+let bloodGroup=prompt("Enter required blood group")
+
+if(!bloodGroup){
+alert("Blood group required")
+return
+}
+
+window.location.href=
+"donor-search.html?bloodGroup="+encodeURIComponent(bloodGroup)
+
+}
+
+/* FIND ICU */
+
+function findICU(){
+window.location.href="icu-finder.html"
+}
+
+/* LOAD EMERGENCY STATUS */
+
+async function loadEmergencyStatus(){
 
 try{
 
-const res=await fetch(API+"/patient/hospitals",{
+const res=await fetch(API+"/emergency/my",{
+headers:{Authorization:"Bearer "+token}
+})
 
+const data=await res.json()
+
+if(!data || data.length===0){
+document.getElementById("status").innerText="No active emergency"
+return
+}
+
+document.getElementById("status").innerText="Status: "+data[0].status
+
+}catch(err){
+console.log(err)
+}
+
+}
+
+/* LOAD NEARBY HOSPITALS */
+
+async function loadNearbyHospitals(){
+
+if(!userLat){
+document.getElementById("hospitalList").innerHTML =
+"<p>Please share your location first</p>"
+return
+}
+
+try{
+
+const res = await fetch(
+API+"/hospitals/nearby?lat="+userLat+"&lng="+userLng,
+{
 headers:{
 Authorization:"Bearer "+token
 }
+}
+)
 
-})
-
-const hospitals=await res.json()
+const hospitals = await res.json()
 
 let html=""
 
+if(!hospitals || hospitals.length===0){
+
+html="<p>No hospitals nearby</p>"
+
+}else{
+
 hospitals.forEach(h=>{
+
+const coords=h.location?.coordinates || []
+const lng=coords[0]
+const lat=coords[1]
 
 html+=`
 
 <div class="hospital-card">
 
-<b>${h.name}</b><br>
+<p><b>${h.name}</b> | ICU Beds: ${h.icuBeds || 0}</p>
 
-City: ${h.city}<br>
-
-ICU Beds: ${h.icuBeds}
+<button onclick="navigateHospital(${lat},${lng})">
+Navigate
+</button>
 
 </div>
 
@@ -246,35 +410,57 @@ ICU Beds: ${h.icuBeds}
 
 })
 
+}
+
 document.getElementById("hospitalList").innerHTML=html
 
 }catch(err){
 
-console.log(err)
+document.getElementById("hospitalList").innerHTML =
+"<p>Unable to load hospitals</p>"
 
 }
 
 }
 
-const socket = io("http://localhost:5000")
+/* GOOGLE MAP NAVIGATION */
 
-socket.on("emergencyUpdate",(data)=>{
+function navigateHospital(lat,lng){
 
-document.getElementById("status").innerText =
-"Status: "+data.status
+if(!lat || !lng){
+alert("Hospital location not available")
+return
+}
 
+const mapURL =
+`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
+
+window.open(mapURL,"_blank")
+
+}
+
+/* SOCKET REALTIME */
+
+let socket
+
+try{
+socket=io("http://localhost:5000")
+
+socket.on("emergencyUpdated",(data)=>{
+document.getElementById("status").innerText="Status: "+data.status
 })
-/* AUTO REFRESH */
 
-setInterval(loadStatus,5000)
+socket.on("hospitalResourceUpdate",()=>{
+loadNearbyHospitals()
+})
 
-/* INIT */
+}catch(err){
+console.log("Socket connection failed")
+}
 
-loadHospitals()
-loadStatus()
+loadEmergencyStatus()
 
 </script>
 
 </body>
-
 </html>

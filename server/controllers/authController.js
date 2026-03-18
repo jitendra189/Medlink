@@ -1,53 +1,105 @@
-const User = require("../models/User");
-const generateToken = require("../utils/jwt");
-const { hashPassword, comparePassword } = require("../utils/passwordHash");
+const User = require("../models/User")
+const generateToken = require("../utils/jwt")
+const {hashPassword,comparePassword} = require("../utils/passwordHash")
 
-exports.register = async (req, res) => {
-  try {
+/* =========================
+REGISTER
+========================= */
 
-    const { name, email, password, role } = req.body;
+exports.register = async(req,res)=>{
 
-    const existingUser = await User.findOne({ email });
+try{
 
-    if (existingUser)
-      return res.status(400).json({ message: "User already exists" });
+const {name,email,password,role} = req.body
 
-    const hashed = await hashPassword(password);
+if(!name || !email || !password || !role){
+return res.status(400).json({
+message:"All fields required"
+})
+}
 
-    const user = await User.create({
-      name,
-      email,
-      password: hashed,
-      role
-    });
+/* check user */
 
-    const token = generateToken(user);
+const existing = await User.findOne({email,role})
 
-    res.status(201).json({
-      message: "User registered",
-      token,
-      user
-    });
+if(existing){
+return res.status(400).json({
+message:"User already exists with this role"
+})
+}
 
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+/* hash password */
+
+const hashed = await hashPassword(password)
+
+/* create user */
+
+const user = await User.create({
+name,
+email,
+password:hashed,
+role
+})
+
+const token = generateToken(user)
+
+res.status(201).json({
+message:"Registration successful",
+token,
+user
+})
+
+}catch(err){
+
+console.log(err)
+
+res.status(500).json({
+message:"Server error"
+})
+
+}
+
+}
+
+/* =========================
+LOGIN
+========================= */
 
 exports.login = async (req, res) => {
+
   try {
 
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
+
+    /* find user by email */
 
     const user = await User.findOne({ email });
 
-    if (!user)
-      return res.status(404).json({ message: "User not found" });
+    if (!user) {
+      return res.status(401).json({
+        message: "Invalid email or password"
+      });
+    }
 
-    const match = await comparePassword(password, user.password);
+    /* role check */
 
-    if (!match)
-      return res.status(401).json({ message: "Invalid password" });
+    if (user.role !== role) {
+      return res.status(401).json({
+        message: "Incorrect role selected"
+      });
+    }
+
+    /* compare password */
+
+    const isMatch = await comparePassword(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        message: "Invalid email or password"
+      });
+    }
+
+    /* generate token */
 
     const token = generateToken(user);
 
@@ -57,7 +109,34 @@ exports.login = async (req, res) => {
       user
     });
 
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+
+    console.log(err);
+
+    res.status(500).json({
+      message: "Server error"
+    });
+
   }
+
 };
+
+/* =========================
+GET CURRENT USER
+========================= */
+
+exports.getMe = async(req,res)=>{
+
+try{
+
+const user = await User.findById(req.user.id).select("-password")
+
+res.json(user)
+
+}catch(err){
+
+res.status(500).json({message:"Server error"})
+
+}
+
+}

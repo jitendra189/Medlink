@@ -1,50 +1,79 @@
-const Hospital = require("../models/Hospital");
+const Hospital = require("../models/Hospital")
 
-exports.getDashboard = async(req,res)=>{
+/* =========================
+   GET HOSPITAL DASHBOARD
+========================= */
 
-try{
+exports.getDashboard = async (req, res) => {
 
-const hospital = await Hospital.findOne({admin:req.user.id})
+try {
 
-res.json(hospital)
+const hospital = await Hospital.findOne({ admin: req.user.id })
 
-}catch(error){
-
-res.status(500).json({error:error.message})
-
+if (!hospital) {
+return res.status(404).json({
+message: "Hospital not found"
+})
 }
 
-}
-
-
-exports.updateResources = async(req,res)=>{
-
-try{
-
-const {icuBeds,doctors,ambulances} = req.body
-
-const hospital = await Hospital.findOneAndUpdate(
-
-{admin:req.user.id},
-
-{
-icuBeds,
-doctors,
-ambulances
-},
-
-{new:true}
-
-)
+/* send only required dashboard fields */
 
 res.json({
-message:"Resources updated",
+name: hospital.name,
+icuBeds: hospital.icuBeds || 0,
+ventilators: hospital.ventilators || 0,
+doctors: hospital.doctors || 0,
+ambulances: hospital.ambulances || 0
+})
+
+} catch (error) {
+
+res.status(500).json({
+error: error.message
+})
+
+}
+
+}
+
+
+/* =========================
+   UPDATE HOSPITAL RESOURCES
+========================= */
+
+exports.updateResources = async (req, res) => {
+
+try {
+
+const { icuBeds, ventilators, doctors, ambulances } = req.body
+
+const hospital = await Hospital.findOne({ admin: req.user.id })
+
+if (!hospital) {
+return res.status(404).json({
+message: "Hospital not found"
+})
+}
+
+/* update only provided fields */
+
+if (icuBeds !== undefined) hospital.icuBeds = icuBeds
+if (ventilators !== undefined) hospital.ventilators = ventilators
+if (doctors !== undefined) hospital.doctors = doctors
+if (ambulances !== undefined) hospital.ambulances = ambulances
+
+await hospital.save()
+
+res.json({
+message: "Resources updated successfully",
 hospital
 })
 
-}catch(error){
+} catch (error) {
 
-res.status(500).json({error:error.message})
+res.status(500).json({
+error: error.message
+})
 
 }
 

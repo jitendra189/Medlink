@@ -12,7 +12,13 @@ type:String,
 required:true
 },
 
-phone:String,
+phone:{
+type:String
+},
+
+city:{
+type:String
+},
 
 available:{
 type:Boolean,
@@ -22,10 +28,8 @@ default:true
 location:{
 lat:Number,
 lng:Number
-},
+}
 
-city:String
-
-})
+},{timestamps:true})
 
 module.exports = mongoose.model("BloodDonor",bloodDonorSchema)

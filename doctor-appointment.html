@@ -1,0 +1,106 @@
+<!DOCTYPE html><html lang="en"><head>
+<link rel="stylesheet" href="doctor-appointment.css"></head><body><div class="app-container"><button class="hamburger-btn" id="hamburger-btn">
+<i class="fas fa-bars"></i>
+</button><div class="view-toggle"><button id="doctor-view-btn" class="active">
+<i class="fas fa-user-md"></i> MedLink Doctor Panel
+</button><button id="patient-view-btn">
+<i class="fas fa-user-injured"></i> Patient Appointment Screen
+</button></div><div class="sound-toggle" id="sound-toggle" title="Announce Patient">
+<i class="fas fa-bullhorn"></i>
+</div><div class="notification" id="notification">
+<i class="fas fa-bell"></i>
+<span id="notification-text">Now serving patient ML-245</span>
+</div><div class="doctor-view" id="doctor-view"><aside class="sidebar" id="sidebar"><div class="logo">
+<i class="fas fa-heartbeat"></i>
+<span>MedLink</span>
+</div><nav class="nav-menu"><a class="nav-item active" data-view="dashboard">
+<i class="fas fa-tachometer-alt"></i>
+<span>MedLink Dashboard</span>
+</a><a class="nav-item" data-view="calendar">
+<i class="fas fa-calendar-alt"></i>
+<span>Doctor Appointments</span>
+</a><a class="nav-item" data-view="patients">
+<i class="fas fa-users"></i>
+<span>Patients</span>
+</a><a class="nav-item" data-view="records">
+<i class="fas fa-file-medical"></i>
+<span>Medical Records</span>
+</a><a class="nav-item" data-view="medications">
+<i class="fas fa-prescription-bottle-alt"></i>
+<span>Prescriptions</span>
+</a><a class="nav-item" data-view="settings">
+<i class="fas fa-cog"></i>
+<span>System Settings</span>
+</a></nav><div class="doctor-profile"><div class="doctor-avatar">AS</div><div class="doctor-info">
+<h3>Dr. Ananya Sharma</h3>
+<p>Emergency Physician</p>
+</div></div></aside><main class="main-content"><header class="header"><div class="date-info">
+<h1 id="view-title">MedLink Control Center</h1>
+<p id="current-date">Smart Healthcare Appointment System</p>
+</div><div class="header-actions"><button class="btn btn-primary" id="next-patient-btn">
+<i class="fas fa-user-clock"></i>
+<span>Next Appointment</span>
+</button><button class="btn btn-secondary" id="print-btn">
+<i class="fas fa-print"></i>
+<span>Generate Medical Report</span>
+</button><button class="btn-icon" id="notifications-btn">
+<i class="fas fa-bell"></i>
+</button></div></header><div class="view-container active" id="dashboard-view"><div class="dashboard-grid"><div class="left-column"><div class="current-patient-card"><div class="card-header">
+<h2>Current Appointment</h2>
+<div class="live-badge">LIVE</div>
+</div><div class="patient-info"><div class="patient-avatar" id="current-patient-avatar">RK</div><div class="patient-details"><h3 id="current-patient-name">Rahul Kumar</h3><p>
+<i class="fas fa-id-card"></i>
+<span>Token: <strong id="current-patient-turn">ML-245</strong></span>
+</p><p>
+<i class="fas fa-birthday-cake"></i>
+<span id="current-patient-age">32 years old</span>
+</p><p>
+<i class="fas fa-stethoscope"></i>
+<span id="current-patient-condition">Emergency Consultation</span>
+</p></div></div><div class="patient-navigation"><button class="nav-btn" id="prev-patient-btn">
+<i class="fas fa-chevron-left"></i>
+Previous
+</button><div class="current-turn">
+<span>Current Token</span>
+<h4 id="current-turn-display">ML-245</h4>
+</div><button class="nav-btn" id="next-patient-btn-2">
+Next
+<i class="fas fa-chevron-right"></i>
+</button></div><div class="medical-notes"><h4><i class="fas fa-file-medical-alt"></i> Consultation Notes</h4><div class="input-group">
+<label>Diagnosis</label>
+<input type="text" value="General Health Checkup">
+</div><div class="input-group">
+<label>Symptoms</label>
+<input type="text" value="Fever, Headache">
+</div><div class="input-group">
+<label>Treatment Plan</label>
+<textarea>Provide medication and schedule follow-up consultation.</textarea>
+</div><div class="input-group">
+<label>Next Visit</label>
+<input type="date">
+</div></div><!-- FIXED BUTTONS --><div class="action-buttons"><button class="btn btn-primary" id="save-notes-btn">
+<i class="fas fa-save"></i>
+Save Notes
+</button><button class="btn btn-success" id="complete-visit-btn">
+<i class="fas fa-check-circle"></i>
+Complete Appointment
+</button><button class="btn btn-warning" id="reschedule-btn">
+<i class="fas fa-clock"></i>
+Reschedule
+</button></div></div></div><div class="right-column"><div class="queue-card"><div class="queue-header">
+<h3><i class="fas fa-list-ol"></i> Appointment Queue</h3>
+<div class="queue-count">5 waiting</div>
+</div><div class="queue-list" id="patient-queue"></div></div><div class="stats-card"><h3><i class="fas fa-chart-bar"></i> Today's MedLink Stats</h3><div class="stat-row">
+<span>Total Appointments</span>
+<strong id="total-patients">15</strong>
+</div><div class="stat-row">
+<span>Completed</span>
+<strong id="completed-patients">6</strong>
+</div><div class="stat-row">
+<span>Waiting</span>
+<strong id="waiting-patients">5</strong>
+</div><div class="stat-row">
+<span>Average Time</span>
+<strong id="avg-time">12 min</strong>
+</div></div></div></div></div></main></div></div><script src="doctor-appointment.js"></script></body>
+</html>

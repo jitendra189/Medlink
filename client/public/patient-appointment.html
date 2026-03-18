@@ -1,0 +1,189 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8">
+<title>MedLink Smart Appointment</title><style>
+
+body{
+font-family:Arial, sans-serif;
+background:#ecfeff;
+margin:0;
+}
+
+.container{
+max-width:700px;
+margin:50px auto;
+background:white;
+padding:30px;
+border-radius:12px;
+box-shadow:0 10px 30px rgba(0,0,0,0.1);
+}
+
+h1{
+text-align:center;
+color:#0f766e;
+}
+
+.input-group{
+margin-top:15px;
+display:flex;
+flex-direction:column;
+}
+
+label{
+font-weight:600;
+margin-bottom:5px;
+}
+
+input,textarea{
+padding:10px;
+border-radius:6px;
+border:1px solid #ccc;
+}
+
+button{
+margin-top:20px;
+padding:12px;
+border:none;
+background:#0f766e;
+color:white;
+font-size:16px;
+border-radius:8px;
+cursor:pointer;
+}
+
+button:hover{
+background:#115e59;
+}
+
+.doctor-card{
+
+margin-top:20px;
+
+padding:20px;
+
+background:#ccfbf1;
+
+border-radius:10px;
+
+display:none;
+
+}
+
+.doctor-info{
+
+display:flex;
+gap:15px;
+
+}
+
+.doctor-info img{
+
+width:80px;
+height:80px;
+
+border-radius:50%;
+
+object-fit:cover;
+
+}
+
+.token-box{
+margin-top:20px;
+padding:20px;
+background:#e0f7f5;
+border-radius:10px;
+text-align:center;
+display:none;
+}
+
+.token{
+font-size:28px;
+font-weight:bold;
+color:#0f766e;
+}
+
+</style></head><body><div class="container"><h1>MedLink Smart Appointment</h1><div class="input-group">
+<label>Patient Name</label>
+<input type="text" id="name">
+</div><div class="input-group">
+<label>Age</label>
+<input type="number" id="age">
+</div><div class="input-group">
+<label>Symptoms / Reason</label>
+<textarea id="symptoms"></textarea>
+</div><button onclick="findDoctor()">Find Nearest Doctor</button>
+
+<div class="doctor-card" id="doctorCard"><div class="doctor-info"><img id="doctorImage"><div><h3 id="doctorName"></h3><p id="doctorSpeciality"></p><p>📍 Distance: <span id="doctorDistance"></span></p><p>🏠 Address: <span id="doctorAddress"></span></p><p>📞 Phone: <span id="doctorPhone"></span></p></div></div><button onclick="confirmAppointment()">Book Appointment</button>
+
+</div><div class="token-box" id="tokenBox"><h2>Appointment Confirmed</h2><p>Your MedLink Token Number</p><div class="token" id="tokenNumber"></div></div></div><script>
+
+let doctors=[
+
+{
+name:"Dr. Ananya Sharma",
+speciality:"Emergency Physician",
+distance:1.2,
+address:"MedLink City Hospital, Ranchi",
+phone:"+91 9876543210",
+image:"https://randomuser.me/api/portraits/women/65.jpg"
+},
+
+{
+name:"Dr. Raj Mehta",
+speciality:"General Physician",
+distance:2.5,
+address:"MedLink Care Center, Harmu",
+phone:"+91 9823456781",
+image:"https://randomuser.me/api/portraits/men/45.jpg"
+},
+
+{
+name:"Dr. Neha Kapoor",
+speciality:"Cardiologist",
+distance:3.1,
+address:"MedLink Heart Institute, Ranchi",
+phone:"+91 9811122233",
+image:"https://randomuser.me/api/portraits/women/33.jpg"
+}
+
+];
+
+let tokenCounter=300;
+
+function findDoctor(){
+
+navigator.geolocation.getCurrentPosition(()=>{
+
+let nearestDoctor=doctors[0];
+
+doctors.forEach(doc=>{
+if(doc.distance < nearestDoctor.distance){
+nearestDoctor=doc;
+}
+});
+
+document.getElementById("doctorName").innerText=nearestDoctor.name;
+document.getElementById("doctorSpeciality").innerText=nearestDoctor.speciality;
+document.getElementById("doctorDistance").innerText=nearestDoctor.distance+" km";
+document.getElementById("doctorAddress").innerText=nearestDoctor.address;
+document.getElementById("doctorPhone").innerText=nearestDoctor.phone;
+document.getElementById("doctorImage").src=nearestDoctor.image;
+
+document.getElementById("doctorCard").style.display="block";
+
+});
+
+}
+
+function confirmAppointment(){
+
+tokenCounter++;
+
+let token="ML-"+tokenCounter;
+
+document.getElementById("tokenNumber").innerText=token;
+
+document.getElementById("tokenBox").style.display="block";
+
+}
+
+</script></body></html>

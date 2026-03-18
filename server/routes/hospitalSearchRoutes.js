@@ -2,33 +2,28 @@ const express = require("express")
 const router = express.Router()
 
 const {
+
 searchHospitals,
 getHospitalDetails,
 getHospitalResources,
-getHospitalDoctors
+getHospitalDoctors,
+getNearbyHospitals
+
 } = require("../controllers/hospitalSearchController")
 
-const auth = require("../middleware/authMiddleware")
-
-
 /* SEARCH */
+router.get("/search", searchHospitals)
 
-router.get("/search",auth,searchHospitals)
-
+/* NEARBY */
+router.get("/nearby", getNearbyHospitals)
 
 /* DETAILS */
-
-router.get("/:id",auth,getHospitalDetails)
-
+router.get("/:id", getHospitalDetails)
 
 /* RESOURCES */
-
-router.get("/:id/resources",auth,getHospitalResources)
-
+router.get("/:id/resources", getHospitalResources)
 
 /* DOCTORS */
-
-router.get("/:id/doctors",auth,getHospitalDoctors)
-
+router.get("/:id/doctors", getHospitalDoctors)
 
 module.exports = router
