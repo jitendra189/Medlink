@@ -1,0 +1,312 @@
+<!DOCTYPE html><html>
+<head>
+<title>MedLink Driver Dashboard</title><style>
+
+body{
+margin:0;
+font-family:'Segoe UI',sans-serif;
+background:#f4f6f9;
+}
+
+/* HEADER */
+
+.header{
+height:70px;
+background:#e63946;
+color:white;
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:0 30px;
+font-size:20px;
+font-weight:600;
+}
+
+/* CONTAINER */
+
+.container{
+padding:30px;
+max-width:900px;
+margin:auto;
+}
+
+/* DRIVER CARD */
+
+.card{
+background:white;
+border-radius:14px;
+padding:20px;
+box-shadow:0 6px 18px rgba(0,0,0,0.1);
+margin-bottom:20px;
+}
+
+/* DRIVER INFO */
+
+.driver{
+display:flex;
+align-items:center;
+}
+
+.driver img{
+width:70px;
+height:70px;
+border-radius:50%;
+margin-right:15px;
+}
+
+.name{
+font-size:18px;
+font-weight:600;
+}
+
+.phone{
+font-size:14px;
+color:#777;
+}
+
+/* STATUS */
+
+.status{
+margin-top:12px;
+font-size:15px;
+}
+
+.online{
+color:#2e7d32;
+font-weight:600;
+}
+
+.offline{
+color:#c62828;
+font-weight:600;
+}
+
+/* BUTTONS */
+
+button{
+width:100%;
+padding:13px;
+border:none;
+border-radius:8px;
+font-size:15px;
+cursor:pointer;
+margin-top:12px;
+}
+
+.start{
+background:#2a9d8f;
+color:white;
+}
+
+.stop{
+background:#e63946;
+color:white;
+}
+
+.nav{
+background:#457b9d;
+color:white;
+}
+
+.accept{
+background:#2a9d8f;
+color:white;
+}
+
+.reject{
+background:#d62828;
+color:white;
+}
+
+.call{
+background:#1d3557;
+color:white;
+}
+
+/* LOCATION */
+
+.location-box{
+background:white;
+border-radius:14px;
+padding:20px;
+box-shadow:0 6px 18px rgba(0,0,0,0.1);
+margin-bottom:20px;
+}
+
+/* REQUEST */
+
+.request-box{
+background:#fff3f3;
+border-left:5px solid #e63946;
+padding:20px;
+border-radius:10px;
+margin-top:20px;
+}
+
+</style></head><body><div class="header"><div>🚑 MedLink Driver Dashboard</div><div id="statusText">Offline</div></div><div class="container"><!-- DRIVER INFO --><div class="card"><div class="driver"><img src="https://i.pravatar.cc/150"><div>
+<div class="name">Ravi Kumar</div>
+<div class="phone">+91 9876543210</div>
+</div></div><div class="status">
+Status: <span id="driverStatus" class="offline">Offline</span>
+</div><button class="start" onclick="startTracking()">Start Duty</button>
+<button class="stop" onclick="stopTracking()">Stop Duty</button>
+
+</div><!-- LOCATION --><div class="location-box"><h3>📍 Live Location</h3><p>Latitude: <span id="lat">--</span></p>
+<p>Longitude: <span id="lng">--</span></p>
+<p>Last Update: <span id="time">--</span></p><button class="nav" onclick="openNavigation()">Open Navigation</button>
+
+</div><div id="requests"></div></div><script>
+
+let watchId;
+let currentLat=null;
+let currentLng=null;
+let patientLat=null;
+let patientLng=null;
+
+/* START TRACKING */
+
+function startTracking(){
+
+document.getElementById("driverStatus").innerText="Online";
+document.getElementById("driverStatus").className="online";
+document.getElementById("statusText").innerText="Online";
+
+watchId=navigator.geolocation.watchPosition(async(position)=>{
+
+const lat=position.coords.latitude;
+const lng=position.coords.longitude;
+
+currentLat=lat;
+currentLng=lng;
+
+document.getElementById("lat").innerText=lat.toFixed(5);
+document.getElementById("lng").innerText=lng.toFixed(5);
+document.getElementById("time").innerText=new Date().toLocaleTimeString();
+
+await fetch("http://localhost:3001/api/ambulance/update-location",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+lat:lat,
+lng:lng
+})
+
+});
+
+});
+
+}
+
+/* STOP TRACKING */
+
+function stopTracking(){
+
+navigator.geolocation.clearWatch(watchId);
+
+document.getElementById("driverStatus").innerText="Offline";
+document.getElementById("driverStatus").className="offline";
+document.getElementById("statusText").innerText="Offline";
+
+}
+
+/* OPEN NAVIGATION */
+
+function openNavigation(){
+
+if(patientLat && patientLng){
+
+window.open(`https://www.google.com/maps/dir/?api=1&destination=${patientLat},${patientLng}`);
+}
+else{
+
+alert("No patient location available yet.");
+
+}
+
+}
+
+/* CALL PATIENT */
+
+function callPatient(){
+
+window.location.href="tel:+919876543210";
+
+}
+
+/* CHECK REQUESTS */
+
+async function checkRequests(){
+
+setInterval(async()=>{
+
+const res=await fetch("http://localhost:3001/api/driver/request");
+const data=await res.json();
+
+if(data && data.status==="pending"){
+
+patientLat=data.lat;
+patientLng=data.lng;
+
+document.getElementById("requests").innerHTML=
+
+`
+
+<div class="request-box">
+
+<h3>🚨 Emergency Request</h3>
+
+<p>Patient Location:</p>
+
+<p>${data.lat}, ${data.lng}</p>
+
+<button class="accept" onclick="acceptRequest()">Accept</button>
+
+<button class="reject" onclick="rejectRequest()">Reject</button>
+
+<button class="call" onclick="callPatient()">Call Patient</button>
+
+</div>
+
+`;
+
+}
+
+},3000);
+
+}
+
+/* ACCEPT REQUEST */
+
+async function acceptRequest(){
+
+await fetch("http://localhost:3001/api/driver/accept",{
+method:"POST"
+});
+
+alert("Request Accepted");
+
+}
+
+/* REJECT REQUEST */
+
+async function rejectRequest(){
+
+await fetch("http://localhost:3001/api/driver/reject",{
+method:"POST"
+});
+
+document.getElementById("requests").innerHTML="";
+
+alert("Request Rejected");
+
+}
+
+checkRequests();
+
+</script></body>
+</html>

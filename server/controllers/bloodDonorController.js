@@ -1,23 +1,39 @@
-const BloodDonor = require("../models/BloodDonor");
+const BloodDonor = require("../models/BloodDonor")
 
-exports.getDashboard = async(req,res)=>{
+
+/* =========================
+   DONOR DASHBOARD
+========================= */
+
+exports.getDashboard = async (req,res)=>{
 
 try{
 
-const donor = await BloodDonor.findOne({user:req.user.id})
+const donor = await BloodDonor.findOne({ user:req.user.id })
+.populate("user","name email")
+
+if(!donor){
+return res.status(404).json({
+message:"Donor profile not found"
+})
+}
 
 res.json(donor)
 
 }catch(error){
 
-res.status(500).json({error:error.message})
+res.status(500).json({ error:error.message })
 
 }
 
 }
 
 
-exports.updateAvailability = async(req,res)=>{
+/* =========================
+   UPDATE AVAILABILITY
+========================= */
+
+exports.updateAvailability = async (req,res)=>{
 
 try{
 
@@ -25,47 +41,67 @@ const {available} = req.body
 
 const donor = await BloodDonor.findOneAndUpdate(
 
-{user:req.user.id},
+{ user:req.user.id },
 
-{available},
+{ available },
 
-{new:true}
+{ new:true }
 
 )
 
+if(!donor){
+return res.status(404).json({
+message:"Donor profile not found"
+})
+}
+
 res.json({
-message:"Availability updated",
+message:"Availability updated successfully",
 donor
 })
 
 }catch(error){
 
-res.status(500).json({error:error.message})
+res.status(500).json({ error:error.message })
 
 }
 
 }
 
-/* SEARCH DONORS */
 
-exports.searchDonors = async(req,res)=>{
+/* =========================
+   SEARCH DONORS
+========================= */
+
+exports.searchDonors = async (req,res)=>{
 
 try{
 
-const {bloodGroup} = req.query
+const {bloodGroup,city} = req.query
 
-const donors = await BloodDonor.find({
+if(!bloodGroup){
+return res.status(400).json({
+message:"Blood group is required"
+})
+}
 
-bloodGroup:bloodGroup,
+const query = {
+bloodGroup: { $regex: bloodGroup, $options:"i" },
 available:true
+}
 
-}).populate("user","name email")
+if(city){
+query.city = city
+}
+
+const donors = await BloodDonor.find(query)
+.populate("user","name email")
 
 res.json(donors)
 
 }catch(error){
 
-res.status(500).json({error:error.message})
+res.status(500).json({ error:error.message })
 
 }
 

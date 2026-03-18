@@ -1,147 +1,39 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Blood Donor Search - MedLink</title>
+<title>Blood Donors</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <style>
 
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Poppins
-}
-
 body{
-background:linear-gradient(135deg,#020617,#0f172a);
-color:white;
-display:flex
-}
-
-/* SIDEBAR */
-
-.sidebar{
-width:240px;
+font-family:Poppins;
 background:#020617;
-height:100vh;
-padding:25px;
-border-right:1px solid #1e293b
-}
-
-.sidebar h2{
-color:#38bdf8;
-margin-bottom:40px
-}
-
-.sidebar a{
-display:block;
-padding:12px;
-margin:10px 0;
 color:white;
-text-decoration:none;
-border-radius:8px
-}
-
-.sidebar a:hover{
-background:#2563eb
-}
-
-/* MAIN */
-
-.main{
-flex:1;
 padding:40px
 }
 
-/* SEARCH */
-
-.search-box{
-
-background:#0f172a;
-padding:25px;
-border-radius:12px;
-margin-bottom:30px;
-box-shadow:0 10px 25px rgba(0,0,0,0.5)
-
-}
-
-.search-box select{
-
-padding:10px;
-border:none;
-border-radius:6px;
-margin-right:10px
-
-}
-
-.search-box button{
-
-padding:10px 18px;
-background:#dc2626;
-border:none;
-border-radius:6px;
-color:white;
-cursor:pointer
-
-}
-
-/* DONOR GRID */
-
-.donor-grid{
-
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:20px
-
+h1{
+margin-bottom:30px
 }
 
 .donor-card{
-
 background:#0f172a;
 padding:20px;
 border-radius:10px;
-box-shadow:0 10px 25px rgba(0,0,0,0.5);
-cursor:pointer;
-transition:0.3s
-
+margin-bottom:15px
 }
 
-.donor-card:hover{
-
-transform:translateY(-6px)
-
-}
-
-.donor-card h3{
-
-color:#38bdf8;
-margin-bottom:8px
-
-}
-
-.status{
-
-margin-top:8px;
-display:inline-block;
-padding:4px 10px;
+button{
+padding:10px 20px;
+background:#dc2626;
+border:none;
+color:white;
 border-radius:6px;
-font-size:12px
-
-}
-
-.available{
-background:#22c55e
-}
-
-.unavailable{
-background:#ef4444
+cursor:pointer
 }
 
 </style>
@@ -150,78 +42,44 @@ background:#ef4444
 
 <body>
 
-<div class="sidebar">
+<h1>Available Blood Donors</h1>
 
-<h2>MedLink</h2>
-
-<a href="patient-dashboard.html">Dashboard</a>
-<a href="donor-search.html">Blood Donors</a>
-
-</div>
-
-<div class="main">
-
-<h1>Find Blood Donor</h1>
-
-<div class="search-box">
-
-<select id="bloodGroup">
-
-<option>Select Blood Group</option>
-<option>A+</option>
-<option>A-</option>
-<option>B+</option>
-<option>B-</option>
-<option>O+</option>
-<option>O-</option>
-<option>AB+</option>
-<option>AB-</option>
-
-</select>
-
-<button onclick="searchDonors()">
-Search
-</button>
-
-</div>
-
-<div class="donor-grid" id="donorList">
-
-<p>Select a blood group to search donors</p>
-
-</div>
-
-</div>
+<div id="donorList"></div>
 
 <script>
 
 const API="http://localhost:5000/api"
 const token=localStorage.getItem("token")
 
-async function searchDonors(){
+/* GET BLOOD GROUP FROM URL */
 
-const group=document.getElementById("bloodGroup").value
+const params = new URLSearchParams(window.location.search)
 
-if(!group){
+let bloodGroup = params.get("bloodGroup")
 
-alert("Please select blood group")
-return
+/* decode O%2B → O+ */
 
-}
+bloodGroup = decodeURIComponent(bloodGroup)
 
-const res=await fetch(
-API+"/donors/search?bloodGroup="+group,
+async function loadDonors(){
+
+try{
+
+const res = await fetch(
+API+"/donors/search?bloodGroup="+encodeURIComponent(bloodGroup),
 {
 headers:{
 Authorization:"Bearer "+token
 }
 })
 
-const donors=await res.json()
+const donors = await res.json()
+
+console.log("Donor response:", donors)
 
 let html=""
 
-if(donors.length===0){
+if(!Array.isArray(donors) || donors.length===0){
 
 html="<p>No donors available</p>"
 
@@ -231,20 +89,19 @@ donors.forEach(d=>{
 
 html+=`
 
-<div class="donor-card"
-onclick="viewDonor('${d._id}')">
+<div class="donor-card">
 
-<h3>${d.user?.name || "Unknown"}</h3>
+<h3>${d.user?.name || ""}</h3>
 
-<p><b>Blood:</b> ${d.bloodGroup}</p>
+<p>Blood Group: ${d.bloodGroup}</p>
 
-<p><b>Phone:</b> ${d.phone || "N/A"}</p>
+<p>Phone: ${d.phone}</p>
 
-<span class="status ${d.available?'available':'unavailable'}">
+<p>City: ${d.city || "Ranchi"}</p>
 
-${d.available?'Available':'Not Available'}
-
-</span>
+<a href="tel:${d.phone}">
+<button>Call Donor</button>
+</a>
 
 </div>
 
@@ -256,13 +113,15 @@ ${d.available?'Available':'Not Available'}
 
 document.getElementById("donorList").innerHTML=html
 
-}
+}catch(error){
 
-function viewDonor(id){
-
-window.location="../donor/donor-profile.html?id="+id
+console.log(error)
 
 }
+
+}
+
+loadDonors()
 
 </script>
 

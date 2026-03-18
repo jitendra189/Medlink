@@ -11,9 +11,8 @@ try{
 const query = req.query.name || ""
 
 const hospitals = await Hospital.find({
-name: { $regex: query, $options: "i" }
-})
-.limit(10)
+name:{ $regex: query, $options:"i" }
+}).limit(10)
 
 res.json(hospitals)
 
@@ -52,7 +51,7 @@ res.status(500).json({error:err.message})
 
 
 /* =========================
-   GET HOSPITAL RESOURCES
+   GET RESOURCES
 ========================= */
 
 exports.getHospitalResources = async (req,res)=>{
@@ -60,10 +59,6 @@ exports.getHospitalResources = async (req,res)=>{
 try{
 
 const hospital = await Hospital.findById(req.params.id)
-
-if(!hospital){
-return res.status(404).json({message:"Hospital not found"})
-}
 
 res.json({
 icuBeds:hospital.icuBeds,
@@ -88,27 +83,64 @@ exports.getHospitalDoctors = async (req,res)=>{
 
 try{
 
-/* mock doctor list for now */
-
 const doctors = [
+
 {
 name:"Dr Sharma",
 specialization:"Cardiologist",
 availability:"Available"
 },
+
 {
 name:"Dr Khan",
 specialization:"Orthopedic",
 availability:"Available"
 },
+
 {
 name:"Dr Mehta",
 specialization:"Neurologist",
 availability:"Busy"
 }
+
 ]
 
 res.json(doctors)
+
+}catch(err){
+
+res.status(500).json({error:err.message})
+
+}
+
+}
+
+
+/* =========================
+   GET NEARBY HOSPITALS
+========================= */
+
+exports.getNearbyHospitals = async (req,res)=>{
+
+try{
+
+const {lat,lng} = req.query
+
+const hospitals = await Hospital.find({
+
+location:{
+$near:{
+$geometry:{
+type:"Point",
+coordinates:[parseFloat(lng),parseFloat(lat)]
+},
+$maxDistance:10000
+}
+}
+
+})
+
+res.json(hospitals)
 
 }catch(err){
 

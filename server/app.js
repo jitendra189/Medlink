@@ -5,6 +5,8 @@ const patientRoutes = require("./routes/patientRoutes");
 const hospitalDashboardRoutes = require("./routes/hospitalDashboardRoutes");
 const emergencyRoutes = require("./routes/emergencyRoutes");
 const hospitalSearchRoutes = require("./routes/hospitalSearchRoutes");
+const donorRoutes = require("./routes/bloodDonorRoutes")
+const hospitalRoutes = require("./routes/hospitalRoutes");
 
 const authRoutes = require("./routes/authRoutes");
 
@@ -19,6 +21,8 @@ app.use("/api/patient", patientRoutes);
 app.use("/api/hospital", hospitalDashboardRoutes);
 app.use("/api/emergency", emergencyRoutes);
 app.use("/api/hospitals",hospitalSearchRoutes);
+app.use("/api/donors", donorRoutes)
+app.use("/api/hospitals", hospitalRoutes);
 
 /* Serve frontend */
 app.use(express.static(path.join(__dirname, "../client/public")));

@@ -32,7 +32,7 @@ overflow:hidden;
 
 .container{
 
-width:400px;
+width:420px;
 padding:40px;
 background:rgba(255,255,255,0.08);
 border-radius:20px;
@@ -43,16 +43,39 @@ color:white;
 
 }
 
-/* glow effect */
-
 .container:hover{
 box-shadow:0 0 20px #2563eb;
 }
 
 h2{
-margin-bottom:25px;
+margin-bottom:20px;
 text-align:center;
 font-weight:600;
+}
+
+/* role tabs */
+
+.roles{
+display:flex;
+justify-content:space-between;
+margin-bottom:15px;
+}
+
+.role-btn{
+
+flex:1;
+padding:8px;
+border:none;
+background:transparent;
+color:#cbd5f5;
+cursor:pointer;
+border-bottom:2px solid transparent;
+
+}
+
+.role-btn.active{
+color:#60a5fa;
+border-bottom:2px solid #60a5fa;
 }
 
 /* inputs */
@@ -75,7 +98,7 @@ color:#cbd5f5;
 
 /* button */
 
-button{
+button.login-btn{
 
 width:100%;
 padding:12px;
@@ -90,10 +113,8 @@ transition:0.3s;
 
 }
 
-button:hover{
-
+button.login-btn:hover{
 box-shadow:0 0 15px #2563eb;
-
 }
 
 /* error */
@@ -110,17 +131,13 @@ text-align:center;
 /* register link */
 
 .register-link{
-
 margin-top:20px;
 text-align:center;
-
 }
 
 .register-link a{
-
 color:#60a5fa;
 text-decoration:none;
-
 }
 
 </style>
@@ -133,13 +150,32 @@ text-decoration:none;
 
 <h2>MedLink Login</h2>
 
+<!-- ROLE SWITCH -->
+
+<div class="roles">
+
+<button class="role-btn active" onclick="setRole('patient',this)">Patient</button>
+<button class="role-btn" onclick="setRole('hospital',this)">Hospital</button>
+<button class="role-btn" onclick="setRole('donor',this)">Donor</button>
+
+</div>
+
 <input id="email" placeholder="Email">
+
+<div style="position:relative">
 
 <input id="password" type="password" placeholder="Password">
 
+<span id="eye"
+onclick="togglePassword()"
+style="position:absolute;right:12px;top:12px;cursor:pointer">
+👁️
+</span>
+
+</div>
 <div class="error" id="error"></div>
 
-<button onclick="login()">Login</button>
+<button class="login-btn" onclick="login()">Login</button>
 
 <div class="register-link">
 Don't have an account?
@@ -151,6 +187,37 @@ Don't have an account?
 <script>
 
 const API="http://localhost:5000/api"
+
+let selectedRole="patient"
+
+function setRole(role,btn){
+
+selectedRole=role
+
+document.querySelectorAll(".role-btn").forEach(b=>{
+b.classList.remove("active")
+})
+
+btn.classList.add("active")
+
+}
+
+/* PASSWORD TOGGLE */
+
+function togglePassword(){
+
+const pass=document.getElementById("password")
+const eye=document.getElementById("eye")
+
+if(pass.type==="password"){
+pass.type="text"
+eye.innerText="🙈"
+}else{
+pass.type="password"
+eye.innerText="👁️"
+}
+
+}
 
 async function login(){
 
@@ -172,16 +239,19 @@ headers:{
 
 body:JSON.stringify({
 email,
-password
+password,
+role:selectedRole
 })
 
 })
 
 const data=await res.json()
 
-if(data.error){
+console.log("SERVER RESPONSE:",data)   // debugging
 
-error.innerText=data.error
+if(!res.ok){
+
+error.innerText=data.message || "Email or password is wrong"
 return
 
 }
@@ -193,32 +263,26 @@ localStorage.setItem("token",data.token)
 /* redirect by role */
 
 if(data.user.role==="patient"){
-
-window.location.href="../patient/dashboard.html"
-
+window.location.href="patient-dashboard.html"
 }
 
 if(data.user.role==="hospital"){
-
-window.location.href="../hospital/dashboard.html"
-
+window.location.href="../hospital-dashboard.html"
 }
 
 if(data.user.role==="donor"){
-
-window.location.href="../donor/dashboard.html"
-
+window.location.href="../donor-profile.html"
 }
 
 }catch(err){
 
-error.innerText="Login failed"
+console.log(err)
+error.innerText="Server error. Try again."
 
 }
 
 }
 
 </script>
-
 </body>
 </html>

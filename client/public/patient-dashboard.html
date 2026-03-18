@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -32,10 +33,15 @@ padding:12px;
 margin:10px 0;
 text-decoration:none;
 color:white;
-border-radius:8px
+border-radius:8px;
+transition:0.2s
 }
 
 .sidebar a:hover{background:#2563eb}
+
+.sidebar .active{
+background:#2563eb
+}
 
 /* MAIN */
 
@@ -184,11 +190,13 @@ box-shadow:0 4px 15px rgba(0,0,0,0.05)
 
 <h2>MedLink</h2>
 
-<a href="#">Dashboard</a>
+<a class="active" href="patient-dashboard.html">Dashboard</a>
 <a href="nearby-hospitals.html">Nearby Hospitals</a>
 <a href="donor-search.html">Blood Donors</a>
+<a href="my-requests.html">My Requests</a>
 <a href="emergency.html">Emergency</a>
-
+<a href="patient-appointment.html">Book Appointment</a>
+<a href="../../ambulance-tracking-module/patient.html">Book Ambulance</a>
 </div>
 
 <div class="main">
@@ -342,19 +350,17 @@ document.getElementById("icuCount").innerText=icuTotal
 
 }
 
-/* OPEN HOSPITAL DETAILS */
+/* OPEN HOSPITAL */
 
 function openHospital(id){
-
 window.location.href="hospital-search.html?id="+id
-
 }
 
-/* BLOOD DONOR SEARCH */
+/* BLOOD SEARCH */
 
 async function searchDonor(){
 
-const group=document.getElementById("bloodGroup").value
+const group=document.getElementById("bloodGroup").value.trim()
 
 if(!group){
 alert("Enter blood group")
@@ -369,25 +375,15 @@ const donors=await res.json()
 
 let html=""
 
-if(donors.length===0){
-
-html="<p>No donors available</p>"
-
-}else{
-
 donors.forEach(d=>{
-
 html+=`
 <div class="donor-card">
-<p><b>Name:</b> ${d.user?.name || "Unknown"}</p>
-<p><b>Blood Group:</b> ${d.bloodGroup}</p>
-<p><b>Phone:</b> ${d.phone || "N/A"}</p>
+<p><b>Name:</b> ${d.user?.name}</p>
+<p><b>Blood:</b> ${d.bloodGroup}</p>
+<p><b>Phone:</b> ${d.phone}</p>
 </div>
 `
-
 })
-
-}
 
 document.getElementById("donorList").innerHTML=html
 
@@ -407,13 +403,13 @@ document.getElementById("locationResult").innerHTML=
 
 }
 
-/* SOS */
+/* SEND SOS */
 
 async function sendSOS(){
 
 navigator.geolocation.getCurrentPosition(async position=>{
 
-await fetch(API+"/emergency/request",{
+await fetch(API+"/emergency/create",{
 
 method:"POST",
 
@@ -444,25 +440,23 @@ const res=await fetch(API+"/emergency/my",{
 headers:{Authorization:"Bearer "+token}
 })
 
-const data=await res.json()
+const requests=await res.json()
 
-if(!data){
+if(!requests || requests.length===0){
 document.getElementById("emergencyStatus").innerText="No active emergency"
 return
 }
 
-document.getElementById("emergencyStatus").innerText="Status: "+data.status
+const latest=requests[0]
+
+document.getElementById("emergencyStatus").innerText="Status: "+latest.status
 
 }
 
-/* LIVE RESOURCE UPDATE */
+/* LIVE UPDATES */
 
-socket.on("hospitalResourceUpdate",(hospital)=>{
-
-console.log("Live hospital update:",hospital)
-
+socket.on("hospitalResourceUpdate",()=>{
 loadHospitals()
-
 })
 
 setInterval(loadEmergencyStatus,5000)

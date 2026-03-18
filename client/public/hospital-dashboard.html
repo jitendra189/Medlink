@@ -6,9 +6,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>MedLink Hospital Dashboard</title>
+<title>MedLink Hospital Admin</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
 <style>
 
@@ -94,6 +96,11 @@ background:white;
 padding:20px;
 border-radius:12px;
 box-shadow:0 6px 20px rgba(0,0,0,0.05);
+transition:0.3s;
+}
+
+.stat-card:hover{
+transform:translateY(-8px);
 }
 
 /* GRID */
@@ -129,6 +136,23 @@ border:none;
 color:white;
 border-radius:6px;
 cursor:pointer;
+}
+
+/* DOCTORS */
+
+.doctors{
+margin-top:25px;
+background:white;
+padding:20px;
+border-radius:12px;
+box-shadow:0 6px 20px rgba(0,0,0,0.05);
+}
+
+.doctor{
+display:flex;
+justify-content:space-between;
+padding:10px 0;
+border-bottom:1px solid #eee;
 }
 
 /* REQUESTS */
@@ -181,11 +205,11 @@ text-align:center;
 
 <div class="sidebar">
 
-<h2>MedLink</h2>
+<h2>MedLink Admin</h2>
 
-<a href="#">Dashboard</a>
-<a href="#">Hospital Resources</a>
-<a href="#">Emergency Requests</a>
+<a href="../hospital-dashboard.html">Dashboard</a>
+<a href="../emergency.html">Emergency Requests</a>
+<a href="doctor-appointment.html">Doctors</a>
 
 </div>
 
@@ -199,7 +223,7 @@ text-align:center;
 
 <img src="https://randomuser.me/api/portraits/men/32.jpg">
 
-<p>Hospital Admin</p>
+<p id="adminName">Hospital Admin</p>
 
 </div>
 
@@ -211,7 +235,12 @@ text-align:center;
 
 <div class="stat-card">
 <h3 id="icuBeds">0</h3>
-<p>ICU Beds Available</p>
+<p>ICU Beds</p>
+</div>
+
+<div class="stat-card">
+<h3 id="ventilators">0</h3>
+<p>Ventilators</p>
 </div>
 
 <div class="stat-card">
@@ -220,18 +249,15 @@ text-align:center;
 </div>
 
 <div class="stat-card">
-<h3 id="ambulances">0</h3>
-<p>Ambulances</p>
-</div>
-
-<div class="stat-card">
 <h3 id="patients">0</h3>
-<p>Emergency Requests</p>
+<p>Emergency Patients</p>
 </div>
 
 </div>
 
 <div class="grid">
+
+<!-- LEFT -->
 
 <div>
 
@@ -240,15 +266,41 @@ text-align:center;
 <h3>Update Hospital Resources</h3>
 
 <label>ICU Beds</label>
-<input id="icuInput" placeholder="Enter ICU beds">
+<input id="icuInput">
 
-<label>Doctors Available</label>
-<input id="doctorInput" placeholder="Doctors on duty">
+<label>Ventilators</label>
+<input id="ventilatorInput">
 
-<label>Ambulances</label>
-<input id="ambulanceInput" placeholder="Ambulances">
+<label>Doctors</label>
+<input id="doctorInput">
 
 <button onclick="updateResources()">Update Resources</button>
+
+</div>
+
+<div class="doctors">
+
+<h3>Doctors On Duty</h3>
+
+<div id="doctorList"></div>
+
+</div>
+
+</div>
+
+<!-- RIGHT -->
+
+<div>
+
+<div class="requests">
+
+<h3>Emergency Requests</h3>
+
+<div id="requestList">
+
+Loading requests...
+
+</div>
 
 </div>
 
@@ -256,29 +308,14 @@ text-align:center;
 
 <h3>Recent Activity</h3>
 
-<div class="activity-item">
-Hospital dashboard loaded
-</div>
+<div id="activityLog">
 
-<div class="activity-item">
-Resource updates will appear here
-</div>
+<div class="activity-item">System Started</div>
 
 </div>
 
 </div>
 
-<div>
-
-<div class="request">
-
-<p>🚑 Emergency ICU Request</p>
-
-<button onclick="acceptRequest('${r._id}')">Accept</button>
-
-<button onclick="rejectRequest('${r._id}')">Reject</button>
-
-</div>
 </div>
 
 </div>
@@ -297,112 +334,102 @@ Resource updates will appear here
 const API="http://localhost:5000/api"
 const token=localStorage.getItem("token")
 
-/* LOAD HOSPITAL DASHBOARD */
+/* LOAD DASHBOARD */
 
 async function loadHospital(){
 
 const res=await fetch(API+"/hospital/dashboard",{
-
-headers:{
-Authorization:"Bearer "+token
-}
-
+headers:{Authorization:"Bearer "+token}
 })
 
 const data=await res.json()
 
 document.getElementById("icuBeds").innerText=data.icuBeds || 0
+document.getElementById("ventilators").innerText=data.ventilators || 0
 document.getElementById("doctors").innerText=data.doctors || 0
-document.getElementById("ambulances").innerText=data.ambulances || 0
 
 }
 
-/* EMERGENCY REQUESTS */
+/* LOAD EMERGENCY REQUESTS */
 
 async function loadRequests(){
 
-const res = await fetch(
-"http://localhost:5000/api/emergency/requests",
-{
-headers:{
-Authorization:"Bearer "+localStorage.getItem("token")
-}
+const res=await fetch(API+"/emergency/requests",{
+headers:{Authorization:"Bearer "+token}
 })
 
-const requests = await res.json()
+const requests=await res.json()
 
 let html=""
 
 requests.forEach(r=>{
 
 html+=`
+
 <div class="request">
-🚑 Emergency (${r.type})<br>
+
+🚑 ${r.type} Emergency <br>
 Patient: ${r.patient.name}<br>
 Location: ${r.location.lat}, ${r.location.lng}
+
+<br><br>
+
+<button onclick="acceptRequest('${r._id}')">Accept</button>
+<button onclick="rejectRequest('${r._id}')">Reject</button>
+
 </div>
+
 `
 
 })
 
 document.getElementById("requestList").innerHTML=html
 
+document.getElementById("patients").innerText=requests.length
+
 }
 
-loadRequests()
+/* ACCEPT REQUEST */
 
 async function acceptRequest(id){
 
-await fetch(
-"http://localhost:5000/api/emergency/accept/"+id,
-{
+await fetch(API+"/emergency/accept/"+id,{
 method:"PUT",
-headers:{
-Authorization:"Bearer "+localStorage.getItem("token")
-}
+headers:{Authorization:"Bearer "+token}
 })
 
 alert("Emergency Accepted")
 
+addActivity("Emergency request accepted")
+
 loadRequests()
 
 }
 
+/* REJECT REQUEST */
 
 async function rejectRequest(id){
 
-await fetch(
-"http://localhost:5000/api/emergency/reject/"+id,
-{
+await fetch(API+"/emergency/reject/"+id,{
 method:"PUT",
-headers:{
-Authorization:"Bearer "+localStorage.getItem("token")
-}
+headers:{Authorization:"Bearer "+token}
 })
 
 alert("Emergency Rejected")
 
+addActivity("Emergency request rejected")
+
 loadRequests()
 
 }
-
-const socket = io("http://localhost:5000")
-
-socket.on("newEmergency",(data)=>{
-
-alert("🚑 New Emergency Request!")
-
-loadRequests()
-
-})
 
 /* UPDATE RESOURCES */
 
 async function updateResources(){
 
 const icu=document.getElementById("icuInput").value
+const ventilators=document.getElementById("ventilatorInput").value
 const doctors=document.getElementById("doctorInput").value
-const ambulances=document.getElementById("ambulanceInput").value
 
 await fetch(API+"/hospital/update-resources",{
 
@@ -415,19 +442,47 @@ Authorization:"Bearer "+token
 
 body:JSON.stringify({
 icuBeds:icu,
-doctors:doctors,
-ambulances:ambulances
+ventilators:ventilators,
+doctors:doctors
 })
 
 })
 
-alert("Resources Updated Successfully")
+alert("Resources Updated")
+
+addActivity("Hospital resources updated")
 
 loadHospital()
 
 }
 
+/* ACTIVITY LOG */
+
+function addActivity(text){
+
+const log=document.getElementById("activityLog")
+
+log.innerHTML=
+`<div class="activity-item">${text}</div>`+log.innerHTML
+
+}
+
+/* REALTIME EMERGENCY */
+
+const socket=io("http://localhost:5000")
+
+socket.on("newEmergency",(data)=>{
+
+alert("🚑 New Emergency Request!")
+
+addActivity("New emergency received")
+
+loadRequests()
+
+})
+
 loadHospital()
+loadRequests()
 
 </script>
 
