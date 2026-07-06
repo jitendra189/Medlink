@@ -2,10 +2,15 @@ node_modules/
 dist/
 build/
 .turbo/
-*.env
+.env
+.env.*
 !.env.example
 .DS_Store
 coverage/
 .nyc_output/
 *.log
 .superpowers/
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
