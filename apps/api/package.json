@@ -9,7 +9,9 @@
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "lint": "eslint \"{src,test}/**/*.ts\" --fix",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/database/data-source.ts",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/database/data-source.ts"
   },
   "dependencies": {
     "@medlink/shared": "workspace:*",
