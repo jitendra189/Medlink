@@ -11,4 +11,5 @@ export class AuthUserDto {
 export class AuthResponseDto {
   @ApiProperty() accessToken!: string;
   @ApiProperty() user!: AuthUserDto;
+  @ApiProperty({ required: false }) refreshToken?: string;
 }
