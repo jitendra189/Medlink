@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import * as cookieParser from 'cookie-parser';
@@ -11,7 +11,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false,
+    }),
+  );
   app.use(cookieParser());
 
   app.enableCors({
@@ -19,7 +23,7 @@ async function bootstrap() {
     credentials: true,
   });
 
-  app.setGlobalPrefix(API_PREFIX);
+  app.setGlobalPrefix(API_PREFIX, { exclude: ['/health'] });
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -29,20 +33,28 @@ async function bootstrap() {
     }),
   );
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('MedLink API')
-    .setDescription('Healthcare emergency response platform API')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
+  if (process.env.NODE_ENV !== 'production') {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('MedLink API')
+      .setDescription('Healthcare emergency response platform API')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('api/docs', app, document);
+  }
 
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api/docs', app, document);
-
-  const port = configService.get<number>('PORT', 3000);
+  const port = parseInt(configService.get<string>('PORT', '3000'), 10);
   await app.listen(port);
-  console.log(`MedLink API running on http://localhost:${port}`);
-  console.log(`Swagger docs: http://localhost:${port}/api/docs`);
+
+  const logger = new Logger('Bootstrap');
+  logger.log(`MedLink API running on port ${port}`);
+  if (process.env.NODE_ENV !== 'production') {
+    logger.log(`Swagger docs: http://localhost:${port}/api/docs`);
+  }
 }
 
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('Fatal startup error', err);
+  process.exit(1);
+});
