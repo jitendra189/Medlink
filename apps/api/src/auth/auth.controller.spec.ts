@@ -46,6 +46,7 @@ describe('AuthController', () => {
     expect(authService.login).toHaveBeenCalledWith(dto);
     expect(mockRes.cookie).toHaveBeenCalledWith('refreshToken', 'mock-refresh-token', expect.any(Object));
     expect(result).toMatchObject({ accessToken: 'mock.jwt.token' });
+    expect(result).not.toHaveProperty('refreshToken');
   });
 
   it('getMe returns current user from request', async () => {
