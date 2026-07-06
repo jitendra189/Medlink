@@ -6,6 +6,8 @@ import * as cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { API_PREFIX } from '@medlink/shared';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -32,6 +34,8 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  app.useGlobalFilters(new AllExceptionsFilter());
+  app.useGlobalInterceptors(new ResponseInterceptor());
 
   if (process.env.NODE_ENV !== 'production') {
     const swaggerConfig = new DocumentBuilder()
