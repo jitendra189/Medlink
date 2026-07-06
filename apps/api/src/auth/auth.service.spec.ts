@@ -6,14 +6,14 @@ import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { RefreshTokenEntity } from '../database/entities/refresh-token.entity';
-import { Role, BCRYPT_SALT_ROUNDS } from '@medlink/shared';
+import { Role } from '@medlink/shared';
 import * as bcrypt from 'bcryptjs';
 
 const mockUser = {
   id: 'uuid-1',
   name: 'Test',
   email: 'test@example.com',
-  passwordHash: bcrypt.hashSync('Test@12345', BCRYPT_SALT_ROUNDS),
+  passwordHash: bcrypt.hashSync('Test@12345', 1),
   role: Role.PATIENT,
   isActive: true,
 };
@@ -88,9 +88,54 @@ describe('AuthService', () => {
 
     it('returns access token on valid credentials', async () => {
       usersService.findByEmail.mockResolvedValue(mockUser as any);
+      refreshTokenRepo.update.mockResolvedValue({});
       refreshTokenRepo.save.mockResolvedValue({});
       const result = await service.login({ email: 'test@example.com', password: 'Test@12345' });
       expect(result.accessToken).toBe('mock.jwt.token');
+    });
+  });
+
+  describe('refresh', () => {
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 7);
+
+    it('throws UnauthorizedException if token not found', async () => {
+      refreshTokenRepo.findOne.mockResolvedValue(null);
+      await expect(service.refresh('invalid-token')).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('throws UnauthorizedException if token expired', async () => {
+      const pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - 1);
+      refreshTokenRepo.findOne.mockResolvedValue({ id: 't-1', expiresAt: pastDate, user: { id: 'u-1', email: 'x@x.com', role: 'patient', isActive: true } });
+      await expect(service.refresh('old-token')).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('throws UnauthorizedException if user is deactivated', async () => {
+      refreshTokenRepo.findOne.mockResolvedValue({ id: 't-1', expiresAt: futureDate, user: { id: 'u-1', email: 'x@x.com', role: 'patient', isActive: false } });
+      await expect(service.refresh('some-token')).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('returns new access token and refresh token on valid token', async () => {
+      refreshTokenRepo.findOne.mockResolvedValue({ id: 't-1', expiresAt: futureDate, user: { id: 'u-1', email: 'x@x.com', role: 'patient', isActive: true } });
+      refreshTokenRepo.update.mockResolvedValue({});
+      refreshTokenRepo.save.mockResolvedValue({ token: 'new-refresh-token' });
+      const result = await service.refresh('valid-token');
+      expect(result.accessToken).toBe('mock.jwt.token');
+      expect(result.refreshToken).toBe('new-refresh-token');
+    });
+  });
+
+  describe('logout', () => {
+    it('does nothing if refreshToken is empty', async () => {
+      await service.logout('');
+      expect(refreshTokenRepo.update).not.toHaveBeenCalled();
+    });
+
+    it('revokes the token', async () => {
+      refreshTokenRepo.update.mockResolvedValue({});
+      await service.logout('some-token');
+      expect(refreshTokenRepo.update).toHaveBeenCalledWith({ token: 'some-token' }, { isRevoked: true });
     });
   });
 });

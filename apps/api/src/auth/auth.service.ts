@@ -16,13 +16,19 @@ import { BCRYPT_SALT_ROUNDS, REFRESH_TOKEN_EXPIRY_DAYS } from '@medlink/shared';
 
 @Injectable()
 export class AuthService {
+  private readonly jwtSecret: string;
+
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     @InjectRepository(RefreshTokenEntity)
     private readonly refreshTokenRepo: Repository<RefreshTokenEntity>,
-  ) {}
+  ) {
+    const secret = this.config.get<string>('JWT_SECRET');
+    if (!secret) throw new Error('JWT_SECRET environment variable is not configured');
+    this.jwtSecret = secret;
+  }
 
   async register(dto: RegisterDto): Promise<AuthResponseDto> {
     const existing = await this.usersService.findByEmail(dto.email);
@@ -51,12 +57,16 @@ export class AuthService {
     if (!valid) throw new UnauthorizedException('Invalid credentials');
 
     const accessToken = this.generateAccessToken(user.id, user.email, user.role);
+    await this.refreshTokenRepo.update(
+      { userId: user.id, isRevoked: false },
+      { isRevoked: true },
+    );
     await this.createRefreshToken(user.id);
 
     return { accessToken, user: { id: user.id, name: user.name, email: user.email, role: user.role } };
   }
 
-  async refresh(refreshToken: string): Promise<{ accessToken: string }> {
+  async refresh(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
     const token = await this.refreshTokenRepo.findOne({
       where: { token: refreshToken, isRevoked: false },
       relations: ['user'],
@@ -66,21 +76,26 @@ export class AuthService {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
+    if (!token.user || !token.user.isActive) {
+      throw new UnauthorizedException('Account deactivated');
+    }
+
     await this.refreshTokenRepo.update(token.id, { isRevoked: true });
-    await this.createRefreshToken(token.user.id);
+    const newRefreshToken = await this.createRefreshToken(token.user.id);
     const accessToken = this.generateAccessToken(token.user.id, token.user.email, token.user.role);
 
-    return { accessToken };
+    return { accessToken, refreshToken: newRefreshToken.token };
   }
 
   async logout(refreshToken: string): Promise<void> {
+    if (!refreshToken) return;
     await this.refreshTokenRepo.update({ token: refreshToken }, { isRevoked: true });
   }
 
   private generateAccessToken(userId: string, email: string, role: string): string {
     return this.jwtService.sign(
       { sub: userId, email, role },
-      { secret: this.config.get<string>('JWT_SECRET'), expiresIn: '15m' },
+      { secret: this.jwtSecret, expiresIn: '15m' },
     );
   }
 
