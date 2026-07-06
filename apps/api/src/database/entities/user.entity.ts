@@ -27,10 +27,10 @@ export class UserEntity {
   role!: Role;
 
   @Column({ length: 15, nullable: true })
-  phone!: string;
+  phone!: string | null;
 
   @Column({ name: 'avatar_url', nullable: true })
-  avatarUrl!: string;
+  avatarUrl!: string | null;
 
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;
@@ -42,13 +42,13 @@ export class UserEntity {
   updatedAt!: Date;
 
   @OneToOne(() => HospitalEntity, (h) => h.user)
-  hospital!: HospitalEntity;
+  hospital!: HospitalEntity | null;
 
   @OneToOne(() => BloodDonorEntity, (d) => d.user)
-  bloodDonor!: BloodDonorEntity;
+  bloodDonor!: BloodDonorEntity | null;
 
   @OneToOne(() => AmbulanceDriverEntity, (d) => d.user)
-  ambulanceDriver!: AmbulanceDriverEntity;
+  ambulanceDriver!: AmbulanceDriverEntity | null;
 
   @OneToMany(() => RefreshTokenEntity, (t) => t.user)
   refreshTokens!: RefreshTokenEntity[];
