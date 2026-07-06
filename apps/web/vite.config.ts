@@ -25,7 +25,7 @@ export default defineConfig({
     setupFiles: ['./src/test-setup.ts'],
     coverage: {
       provider: 'v8',
-      exclude: ['src/main.tsx', 'postcss.config.js', 'tailwind.config.ts', 'vite.config.ts'],
+      exclude: ['src/main.tsx', 'postcss.config.js', 'tailwind.config.ts', 'vite.config.ts', '**/.eslintrc.*'],
       thresholds: { lines: 70 },
     },
   },
