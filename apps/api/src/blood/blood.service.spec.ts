@@ -25,6 +25,9 @@ describe('BloodService', () => {
               leftJoinAndSelect: jest.fn().mockReturnThis(),
               where: jest.fn().mockReturnThis(),
               andWhere: jest.fn().mockReturnThis(),
+              skip: jest.fn().mockReturnThis(),
+              take: jest.fn().mockReturnThis(),
+              getCount: jest.fn().mockResolvedValue(1),
               getMany: jest.fn().mockResolvedValue([mockDonor]),
             }),
           },
@@ -44,9 +47,10 @@ describe('BloodService', () => {
     requestRepo = module.get(getRepositoryToken(BloodRequestEntity));
   });
 
-  it('searchDonors returns available donors', async () => {
+  it('searchDonors returns paginated available donors', async () => {
     const result = await service.searchDonors({ bloodGroup: BloodGroup.O_POS });
-    expect(result).toHaveLength(1);
+    expect(result.data).toHaveLength(1);
+    expect(result.meta.total).toBe(1);
   });
 
   it('createRequest saves and returns blood request', async () => {

@@ -29,6 +29,10 @@ describe('HospitalsService', () => {
             createQueryBuilder: jest.fn().mockReturnValue({
               where: jest.fn().mockReturnThis(),
               andWhere: jest.fn().mockReturnThis(),
+              skip: jest.fn().mockReturnThis(),
+              take: jest.fn().mockReturnThis(),
+              orderBy: jest.fn().mockReturnThis(),
+              getCount: jest.fn().mockResolvedValue(1),
               getMany: jest.fn().mockResolvedValue([mockHospital]),
             }),
           },
@@ -39,10 +43,11 @@ describe('HospitalsService', () => {
     repo = module.get(getRepositoryToken(HospitalEntity));
   });
 
-  it('findAll returns all hospitals', async () => {
+  it('findAll returns paginated hospitals', async () => {
     const result = await service.findAll({});
-    expect(result).toHaveLength(1);
-    expect(result[0].name).toBe('City Hospital');
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0].name).toBe('City Hospital');
+    expect(result.meta.total).toBe(1);
   });
 
   it('findById returns hospital by id', async () => {

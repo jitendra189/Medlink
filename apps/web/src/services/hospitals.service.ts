@@ -1,9 +1,23 @@
 import { api } from '../lib/axios';
 import type { IHospital } from '@medlink/shared';
 
+interface PaginatedMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+interface PaginatedHospitals {
+  data: IHospital[];
+  meta: PaginatedMeta;
+}
+
 export const hospitalsService = {
-  getAll: (params?: { city?: string; icuAvailable?: boolean }) =>
-    api.get<{ data: IHospital[] }>('/hospitals', { params }).then((r) => r.data.data),
+  getAll: (params?: { city?: string; icuAvailable?: boolean; page?: number; limit?: number }) =>
+    api.get<{ data: PaginatedHospitals }>('/hospitals', { params }).then((r) => r.data.data),
 
   getNearby: (lat: number, lng: number, radiusKm?: number) =>
     api.get<{ data: IHospital[] }>('/hospitals/nearby', { params: { lat, lng, radiusKm } }).then((r) => r.data.data),

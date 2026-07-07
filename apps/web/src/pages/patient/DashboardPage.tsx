@@ -25,10 +25,10 @@ function greeting() {
 
 export default function PatientDashboardPage() {
   const { user } = useAuthStore();
-  const { data: hospitals, isLoading } = useQuery({
+  const { data: hospitalsData, isLoading } = useQuery({
     queryKey: ['hospitals'], queryFn: () => hospitalsService.getAll(),
   });
-  const { data: donors } = useQuery({ queryKey: ['donors'], queryFn: () => bloodService.searchDonors() });
+  const { data: donorsData } = useQuery({ queryKey: ['donors'], queryFn: () => bloodService.searchDonors() });
   const { data: emergencies } = useQuery({ queryKey: ['my-emergencies'], queryFn: emergencyService.getMy });
   const { data: bookings } = useQuery({ queryKey: ['my-bookings'], queryFn: bookingsService.getMy });
 
@@ -42,7 +42,9 @@ export default function PatientDashboardPage() {
 
   if (isLoading) return <PageSpinner />;
 
-  const totalIcu = hospitals?.reduce((sum, h) => sum + (h.icuBedsAvailable || 0), 0) ?? 0;
+  const hospitals = (hospitalsData as any)?.data ?? [];
+  const donors = (donorsData as any)?.data ?? [];
+  const totalIcu = hospitals.reduce((sum: number, h: any) => sum + (h.icuBedsAvailable || 0), 0);
   const activeEmergencies = emergencies?.filter((e) => ['pending', 'accepted'].includes(e.status)).length ?? 0;
 
   const quickActions = [
@@ -81,9 +83,9 @@ export default function PatientDashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <StatsCard icon={<Building2 className="h-5 w-5" />} accent="brand"   label="Hospitals Nearby"    value={hospitals?.length ?? 0} />
+        <StatsCard icon={<Building2 className="h-5 w-5" />} accent="brand"   label="Hospitals Nearby"    value={hospitals.length} />
         <StatsCard icon={<BedDouble className="h-5 w-5" />} accent="emerald" label="ICU Beds Available"  value={totalIcu} />
-        <StatsCard icon={<Droplets className="h-5 w-5" />}  accent="rose"    label="Blood Donors"        value={donors?.length ?? 0} />
+        <StatsCard icon={<Droplets className="h-5 w-5" />}  accent="rose"    label="Blood Donors"        value={donors.length} />
         <StatsCard icon={<AlertTriangle className="h-5 w-5" />} accent="amber" label="Active Requests"    value={activeEmergencies} />
       </div>
 

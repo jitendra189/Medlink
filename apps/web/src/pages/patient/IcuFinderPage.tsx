@@ -11,15 +11,17 @@ import { MapPin, BedDouble, Locate, Building2 } from 'lucide-react';
 export default function IcuFinderPage() {
   const [nearby, setNearby] = useState<{ lat: number; lng: number } | null>(null);
 
-  const { data: hospitals, isLoading } = useQuery({
+  const { data: rawData, isLoading } = useQuery({
     queryKey: ['hospitals-icu', nearby],
-    queryFn: () =>
+    queryFn: (): Promise<any> =>
       nearby
         ? hospitalsService.getNearby(nearby.lat, nearby.lng)
         : hospitalsService.getAll({ icuAvailable: true }),
   });
 
-  const sorted = [...(hospitals ?? [])].sort(
+  const hospitals = Array.isArray(rawData) ? rawData : (rawData as any)?.data ?? [];
+
+  const sorted = [...hospitals].sort(
     (a, b) => (b.icuBedsAvailable ?? 0) - (a.icuBedsAvailable ?? 0),
   );
 

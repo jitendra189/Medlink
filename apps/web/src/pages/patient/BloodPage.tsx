@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Ca
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+import { Pagination } from '../../components/ui/Pagination';
 import { PageSpinner } from '../../components/ui/Spinner';
 import { BloodGroup, BloodRequestUrgency } from '@medlink/shared';
 import { cn } from '../../utils/cn';
@@ -17,11 +18,15 @@ export default function BloodPage() {
   const [selectedGroup, setSelectedGroup] = useState<BloodGroup | ''>('');
   const [units, setUnits] = useState('1');
   const [urgency, setUrgency] = useState<BloodRequestUrgency>(BloodRequestUrgency.MEDIUM);
+  const [donorPage, setDonorPage] = useState(1);
 
-  const { data: donors, isLoading } = useQuery({
-    queryKey: ['donors', selectedGroup],
-    queryFn: () => bloodService.searchDonors(selectedGroup ? { bloodGroup: selectedGroup as BloodGroup } : {}),
+  const { data: donorData, isLoading } = useQuery({
+    queryKey: ['donors', selectedGroup, donorPage],
+    queryFn: () => bloodService.searchDonors(selectedGroup ? { bloodGroup: selectedGroup as BloodGroup, page: donorPage, limit: 10 } : { page: donorPage, limit: 10 }),
   });
+
+  const donors = (donorData as any)?.data ?? [];
+  const donorMeta = (donorData as any)?.meta;
 
   const createRequest = useMutation({
     mutationFn: () =>
@@ -48,6 +53,7 @@ export default function BloodPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5 text-brand-600" /> Search Donors
+              {donorMeta && <span className="ml-auto text-sm font-normal text-surface-500">{donorMeta.total} donors</span>}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -56,7 +62,7 @@ export default function BloodPage() {
               <div className="grid grid-cols-4 gap-2">
                 <button
                   type="button"
-                  onClick={() => setSelectedGroup('')}
+                  onClick={() => { setSelectedGroup(''); setDonorPage(1); }}
                   className={cn(
                     'rounded-xl border-2 px-3 py-2 text-sm font-bold transition',
                     selectedGroup === ''
@@ -72,7 +78,7 @@ export default function BloodPage() {
                     <button
                       key={g}
                       type="button"
-                      onClick={() => setSelectedGroup(g)}
+                      onClick={() => { setSelectedGroup(g); setDonorPage(1); }}
                       className={cn(
                         'rounded-xl border-2 px-3 py-2 text-sm font-bold transition',
                         active
@@ -88,7 +94,7 @@ export default function BloodPage() {
             </div>
 
             <div className="space-y-2">
-              {!donors?.length ? (
+              {!donors.length ? (
                 <div className="py-8 text-center">
                   <Droplets className="mx-auto mb-2 h-8 w-8 text-surface-300" />
                   <p className="text-sm text-surface-500">No donors found for this group.</p>
@@ -117,6 +123,12 @@ export default function BloodPage() {
                 ))
               )}
             </div>
+
+            {donorMeta && donorMeta.totalPages > 1 && (
+              <div className="pt-2">
+                <Pagination page={donorPage} totalPages={donorMeta.totalPages} onPageChange={setDonorPage} />
+              </div>
+            )}
           </CardContent>
         </Card>
 

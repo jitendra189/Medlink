@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { HospitalEntity } from '../database/entities/hospital.entity';
 import { HospitalFiltersDto } from './dto/hospital-filters.dto';
 import { UpdateResourcesDto } from './dto/update-resources.dto';
-import { DEFAULT_SEARCH_RADIUS_KM } from '@medlink/shared';
+import { DEFAULT_SEARCH_RADIUS_KM, PaginatedResult } from '@medlink/shared';
 
 @Injectable()
 export class HospitalsService {
@@ -13,11 +13,30 @@ export class HospitalsService {
     private readonly hospitalRepo: Repository<HospitalEntity>,
   ) {}
 
-  findAll(filters: HospitalFiltersDto): Promise<HospitalEntity[]> {
+  async findAll(filters: HospitalFiltersDto): Promise<PaginatedResult<HospitalEntity>> {
+    const { city, icuAvailable, page = 1, limit = 10 } = filters;
     const qb = this.hospitalRepo.createQueryBuilder('h');
-    if (filters.city) qb.andWhere('LOWER(h.city) = LOWER(:city)', { city: filters.city });
-    if (filters.icuAvailable) qb.andWhere('h.icu_beds_available > 0');
-    return qb.getMany();
+    if (city) qb.andWhere('LOWER(h.city) LIKE LOWER(:city)', { city: `%${city}%` });
+    if (icuAvailable) qb.andWhere('h.icu_beds_available > 0');
+
+    const total = await qb.getCount();
+    const data = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getMany();
+
+    const totalPages = Math.ceil(total / limit);
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    };
   }
 
   findNearby(lat: number, lng: number, radiusKm = DEFAULT_SEARCH_RADIUS_KM): Promise<HospitalEntity[]> {

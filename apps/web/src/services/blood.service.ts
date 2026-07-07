@@ -1,9 +1,23 @@
 import { api } from '../lib/axios';
 import { BloodGroup } from '@medlink/shared';
 
+interface PaginatedMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+interface PaginatedDonors {
+  data: any[];
+  meta: PaginatedMeta;
+}
+
 export const bloodService = {
-  searchDonors: (params?: { bloodGroup?: BloodGroup; city?: string }) =>
-    api.get<{ data: any[] }>('/blood/donors', { params }).then((r) => r.data.data),
+  searchDonors: (params?: { bloodGroup?: BloodGroup; city?: string; page?: number; limit?: number }) =>
+    api.get<{ data: PaginatedDonors }>('/blood/donors', { params }).then((r) => r.data.data),
 
   createRequest: (data: { bloodGroup: BloodGroup; unitsRequired?: number; urgency?: string }) =>
     api.post<{ data: any }>('/blood/requests', data).then((r) => r.data.data),

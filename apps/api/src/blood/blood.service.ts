@@ -5,7 +5,7 @@ import { BloodDonorEntity } from '../database/entities/blood-donor.entity';
 import { BloodRequestEntity } from '../database/entities/blood-request.entity';
 import { CreateBloodRequestDto } from './dto/create-blood-request.dto';
 import { SearchDonorsDto } from './dto/search-donors.dto';
-import { BloodRequestStatus } from '@medlink/shared';
+import { BloodRequestStatus, PaginatedResult } from '@medlink/shared';
 
 @Injectable()
 export class BloodService {
@@ -16,11 +16,30 @@ export class BloodService {
     private readonly requestRepo: Repository<BloodRequestEntity>,
   ) {}
 
-  searchDonors(filters: SearchDonorsDto): Promise<BloodDonorEntity[]> {
+  async searchDonors(filters: SearchDonorsDto): Promise<PaginatedResult<BloodDonorEntity>> {
+    const { bloodGroup, city, page = 1, limit = 10 } = filters;
     const qb = this.donorRepo.createQueryBuilder('d').leftJoinAndSelect('d.user', 'u').where('d.is_available = true');
-    if (filters.bloodGroup) qb.andWhere('d.blood_group = :bg', { bg: filters.bloodGroup });
-    if (filters.city) qb.andWhere('LOWER(d.city) = LOWER(:city)', { city: filters.city });
-    return qb.getMany();
+    if (bloodGroup) qb.andWhere('d.blood_group = :bg', { bg: bloodGroup });
+    if (city) qb.andWhere('LOWER(d.city) LIKE LOWER(:city)', { city: `%${city}%` });
+
+    const total = await qb.getCount();
+    const data = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getMany();
+
+    const totalPages = Math.ceil(total / limit);
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    };
   }
 
   createRequest(patientId: string, dto: CreateBloodRequestDto): Promise<BloodRequestEntity> {

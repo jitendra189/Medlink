@@ -8,4 +8,6 @@ export class HospitalFiltersDto {
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsNumber() lat?: number;
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsNumber() lng?: number;
   @ApiPropertyOptional({ default: 25 }) @IsOptional() @Type(() => Number) @IsNumber() @Min(1) @Max(100) radiusKm?: number;
+  @ApiPropertyOptional({ default: 1 }) @IsOptional() @Type(() => Number) @IsNumber() @Min(1) page?: number;
+  @ApiPropertyOptional({ default: 10 }) @IsOptional() @Type(() => Number) @IsNumber() @Min(1) @Max(50) limit?: number;
 }

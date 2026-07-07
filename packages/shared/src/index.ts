@@ -5,3 +5,4 @@ export * from './types/user.types';
 export * from './types/hospital.types';
 export * from './types/emergency.types';
 export * from './constants/app.constants';
+export * from './types/pagination.types';
