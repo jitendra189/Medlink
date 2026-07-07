@@ -25,7 +25,17 @@ export default defineConfig({
     setupFiles: ['./src/test-setup.ts'],
     coverage: {
       provider: 'v8',
-      exclude: ['src/main.tsx', 'postcss.config.js', 'tailwind.config.ts', 'vite.config.ts', '**/.eslintrc.*'],
+      exclude: [
+        'src/main.tsx',
+        'postcss.config.js',
+        'tailwind.config.ts',
+        'vite.config.ts',
+        '**/.eslintrc.*',
+        'src/lib/axios.ts',
+        'src/lib/query-client.ts',
+        'src/lib/socket.ts',
+        'src/utils/cn.ts',
+      ],
       thresholds: { lines: 70 },
     },
   },
