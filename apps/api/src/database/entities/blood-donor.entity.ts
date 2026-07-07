@@ -20,8 +20,8 @@ export class BloodDonorEntity {
   @Column({ name: 'blood_group', type: 'enum', enum: BloodGroup })
   bloodGroup!: BloodGroup;
 
-  @Column({ length: 100, nullable: true })
-  city!: string;
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  city!: string | null;
 
   @Column({ type: 'decimal', precision: 9, scale: 6, nullable: true })
   latitude!: number;

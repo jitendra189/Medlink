@@ -17,15 +17,15 @@ export class AmbulanceDriverEntity {
   @JoinColumn({ name: 'user_id' })
   user!: UserEntity;
 
-  @Column({ name: 'hospital_id', nullable: true })
-  hospitalId!: string;
+  @Column({ type: 'varchar', name: 'hospital_id', nullable: true })
+  hospitalId!: string | null;
 
   @ManyToOne(() => HospitalEntity, (h) => h.ambulanceDrivers, { nullable: true })
   @JoinColumn({ name: 'hospital_id' })
-  hospital!: HospitalEntity;
+  hospital!: HospitalEntity | null;
 
-  @Column({ name: 'vehicle_number', length: 20, nullable: true })
-  vehicleNumber!: string;
+  @Column({ type: 'varchar', name: 'vehicle_number', length: 20, nullable: true })
+  vehicleNumber!: string | null;
 
   @Column({ name: 'is_on_duty', default: false })
   isOnDuty!: boolean;

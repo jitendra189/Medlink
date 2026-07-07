@@ -26,10 +26,10 @@ export class UserEntity {
   @Column({ type: 'enum', enum: Role })
   role!: Role;
 
-  @Column({ length: 15, nullable: true })
+  @Column({ type: 'varchar', length: 15, nullable: true })
   phone!: string | null;
 
-  @Column({ name: 'avatar_url', nullable: true })
+  @Column({ type: 'varchar', name: 'avatar_url', nullable: true })
   avatarUrl!: string | null;
 
   @Column({ name: 'is_active', default: true })

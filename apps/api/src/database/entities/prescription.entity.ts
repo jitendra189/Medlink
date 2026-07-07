@@ -25,12 +25,12 @@ export class PrescriptionEntity {
   @JoinColumn({ name: 'doctor_id' })
   doctor!: DoctorEntity;
 
-  @Column({ name: 'booking_id', nullable: true })
-  bookingId!: string;
+  @Column({ type: 'varchar', name: 'booking_id', nullable: true })
+  bookingId!: string | null;
 
   @ManyToOne(() => BookingEntity, { nullable: true })
   @JoinColumn({ name: 'booking_id' })
-  booking!: BookingEntity;
+  booking!: BookingEntity | null;
 
   @Column({ nullable: true, type: 'text' })
   diagnosis!: string;

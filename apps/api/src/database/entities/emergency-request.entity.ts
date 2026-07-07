@@ -19,19 +19,19 @@ export class EmergencyRequestEntity {
   @JoinColumn({ name: 'patient_id' })
   patient!: UserEntity;
 
-  @Column({ name: 'hospital_id', nullable: true })
-  hospitalId!: string;
+  @Column({ type: 'varchar', name: 'hospital_id', nullable: true })
+  hospitalId!: string | null;
 
   @ManyToOne(() => HospitalEntity, { nullable: true })
   @JoinColumn({ name: 'hospital_id' })
-  hospital!: HospitalEntity;
+  hospital!: HospitalEntity | null;
 
-  @Column({ name: 'driver_id', nullable: true })
-  driverId!: string;
+  @Column({ type: 'varchar', name: 'driver_id', nullable: true })
+  driverId!: string | null;
 
   @ManyToOne(() => AmbulanceDriverEntity, { nullable: true })
   @JoinColumn({ name: 'driver_id' })
-  driver!: AmbulanceDriverEntity;
+  driver!: AmbulanceDriverEntity | null;
 
   @Column({ type: 'enum', enum: EmergencyType })
   type!: EmergencyType;

@@ -20,8 +20,8 @@ export class NotificationEntity {
   @Column({ type: 'enum', enum: NotificationType })
   type!: NotificationType;
 
-  @Column({ length: 200, nullable: true })
-  title!: string;
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  title!: string | null;
 
   @Column({ nullable: true, type: 'text' })
   message!: string;

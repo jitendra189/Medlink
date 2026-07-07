@@ -19,19 +19,19 @@ export class BloodRequestEntity {
   @JoinColumn({ name: 'patient_id' })
   patient!: UserEntity;
 
-  @Column({ name: 'donor_id', nullable: true })
-  donorId!: string;
+  @Column({ type: 'varchar', name: 'donor_id', nullable: true })
+  donorId!: string | null;
 
   @ManyToOne(() => BloodDonorEntity, { nullable: true })
   @JoinColumn({ name: 'donor_id' })
-  donor!: BloodDonorEntity;
+  donor!: BloodDonorEntity | null;
 
-  @Column({ name: 'hospital_id', nullable: true })
-  hospitalId!: string;
+  @Column({ type: 'varchar', name: 'hospital_id', nullable: true })
+  hospitalId!: string | null;
 
   @ManyToOne(() => HospitalEntity, { nullable: true })
   @JoinColumn({ name: 'hospital_id' })
-  hospital!: HospitalEntity;
+  hospital!: HospitalEntity | null;
 
   @Column({ name: 'blood_group', type: 'enum', enum: BloodGroup })
   bloodGroup!: BloodGroup;

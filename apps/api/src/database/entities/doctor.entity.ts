@@ -19,11 +19,11 @@ export class DoctorEntity {
   @Column({ length: 100 })
   name!: string;
 
-  @Column({ length: 100, nullable: true })
-  speciality!: string;
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  speciality!: string | null;
 
-  @Column({ length: 15, nullable: true })
-  phone!: string;
+  @Column({ type: 'varchar', length: 15, nullable: true })
+  phone!: string | null;
 
   @Column({ name: 'is_available', default: true })
   isAvailable!: boolean;
