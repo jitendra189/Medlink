@@ -119,9 +119,9 @@ export default function LoginPage() {
                 <input type="checkbox" className="h-4 w-4 rounded border-surface-300 text-brand-600 focus:ring-brand-500" />
                 Remember me
               </label>
-              <button type="button" className="font-medium text-brand-600 hover:underline">
+              <Link to="/forgot-password" className="font-medium text-brand-600 hover:underline">
                 Forgot password?
-              </button>
+              </Link>
             </div>
 
             {mutation.error && (

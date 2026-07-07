@@ -2,10 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { RefreshTokenEntity } from '../database/entities/refresh-token.entity';
+import { PasswordResetTokenEntity } from '../database/entities/password-reset-token.entity';
 import { Role } from '@medlink/shared';
 import * as bcrypt from 'bcryptjs';
 
@@ -23,6 +24,7 @@ describe('AuthService', () => {
   let usersService: jest.Mocked<UsersService>;
   let jwtService: jest.Mocked<JwtService>;
   let refreshTokenRepo: any;
+  let passwordResetTokenRepo: any;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -44,6 +46,10 @@ describe('AuthService', () => {
           provide: getRepositoryToken(RefreshTokenEntity),
           useValue: { save: jest.fn(), findOne: jest.fn(), update: jest.fn() },
         },
+        {
+          provide: getRepositoryToken(PasswordResetTokenEntity),
+          useValue: { save: jest.fn(), findOne: jest.fn(), update: jest.fn() },
+        },
       ],
     }).compile();
 
@@ -51,6 +57,7 @@ describe('AuthService', () => {
     usersService = module.get(UsersService);
     jwtService = module.get(JwtService);
     refreshTokenRepo = module.get(getRepositoryToken(RefreshTokenEntity));
+    passwordResetTokenRepo = module.get(getRepositoryToken(PasswordResetTokenEntity));
   });
 
   describe('register', () => {
@@ -136,6 +143,70 @@ describe('AuthService', () => {
       refreshTokenRepo.update.mockResolvedValue({});
       await service.logout('some-token');
       expect(refreshTokenRepo.update).toHaveBeenCalledWith({ token: 'some-token' }, { isRevoked: true });
+    });
+  });
+
+  describe('forgotPassword', () => {
+    it('silently returns when email is not registered (no leak)', async () => {
+      usersService.findByEmail.mockResolvedValue(null);
+      await service.forgotPassword('nobody@example.com');
+      expect(passwordResetTokenRepo.save).not.toHaveBeenCalled();
+      expect(passwordResetTokenRepo.update).not.toHaveBeenCalled();
+    });
+
+    it('invalidates existing tokens and creates a new reset token', async () => {
+      usersService.findByEmail.mockResolvedValue(mockUser as any);
+      passwordResetTokenRepo.update.mockResolvedValue({});
+      passwordResetTokenRepo.save.mockResolvedValue({});
+      await service.forgotPassword('test@example.com');
+      expect(passwordResetTokenRepo.update).toHaveBeenCalledWith(
+        { userId: mockUser.id, isUsed: false },
+        { isUsed: true },
+      );
+      expect(passwordResetTokenRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: mockUser.id, isUsed: false }),
+      );
+      const savedArg = passwordResetTokenRepo.save.mock.calls[0][0];
+      expect(typeof savedArg.token).toBe('string');
+      expect(savedArg.token.length).toBeGreaterThan(20);
+      expect(savedArg.expiresAt).toBeInstanceOf(Date);
+    });
+  });
+
+  describe('resetPassword', () => {
+    const futureDate = new Date(Date.now() + 60 * 60 * 1000);
+    const pastDate = new Date(Date.now() - 60 * 60 * 1000);
+
+    it('throws BadRequestException if token not found', async () => {
+      passwordResetTokenRepo.findOne.mockResolvedValue(null);
+      await expect(service.resetPassword('bogus', 'NewPass123')).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws BadRequestException if token expired', async () => {
+      passwordResetTokenRepo.findOne.mockResolvedValue({
+        id: 'rt-1', userId: mockUser.id, token: 'tok', isUsed: false, expiresAt: pastDate, user: mockUser,
+      });
+      await expect(service.resetPassword('tok', 'NewPass123')).rejects.toThrow(BadRequestException);
+    });
+
+    it('updates password, revokes token, and revokes refresh tokens on success', async () => {
+      passwordResetTokenRepo.findOne.mockResolvedValue({
+        id: 'rt-1', userId: mockUser.id, token: 'tok', isUsed: false, expiresAt: futureDate, user: { ...mockUser },
+      });
+      usersService.save.mockResolvedValue(mockUser as any);
+      passwordResetTokenRepo.update.mockResolvedValue({});
+      refreshTokenRepo.update.mockResolvedValue({});
+      await service.resetPassword('tok', 'NewPass123');
+      expect(usersService.save).toHaveBeenCalledWith(
+        expect.objectContaining({ id: mockUser.id, passwordHash: expect.any(String) }),
+      );
+      const savedUser = usersService.save.mock.calls[0][0] as any;
+      expect(savedUser.passwordHash).not.toBe(mockUser.passwordHash);
+      expect(passwordResetTokenRepo.update).toHaveBeenCalledWith('rt-1', { isUsed: true });
+      expect(refreshTokenRepo.update).toHaveBeenCalledWith(
+        { userId: mockUser.id, isRevoked: false },
+        { isRevoked: true },
+      );
     });
   });
 });

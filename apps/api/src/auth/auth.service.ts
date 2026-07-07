@@ -1,5 +1,5 @@
 import {
-  Injectable, ConflictException, UnauthorizedException,
+  Injectable, ConflictException, UnauthorizedException, BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -9,6 +9,7 @@ import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { UsersService } from '../users/users.service';
 import { RefreshTokenEntity } from '../database/entities/refresh-token.entity';
+import { PasswordResetTokenEntity } from '../database/entities/password-reset-token.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
@@ -24,6 +25,8 @@ export class AuthService {
     private readonly config: ConfigService,
     @InjectRepository(RefreshTokenEntity)
     private readonly refreshTokenRepo: Repository<RefreshTokenEntity>,
+    @InjectRepository(PasswordResetTokenEntity)
+    private readonly passwordResetTokenRepo: Repository<PasswordResetTokenEntity>,
   ) {
     const secret = this.config.get<string>('JWT_SECRET');
     if (!secret) throw new Error('JWT_SECRET environment variable is not configured');
@@ -90,6 +93,63 @@ export class AuthService {
   async logout(refreshToken: string): Promise<void> {
     if (!refreshToken) return;
     await this.refreshTokenRepo.update({ token: refreshToken }, { isRevoked: true });
+  }
+
+  async forgotPassword(email: string): Promise<void> {
+    // Always return success (don't leak if email exists)
+    const user = await this.usersService.findByEmail(email);
+    if (!user) return;
+
+    // Invalidate existing tokens
+    await this.passwordResetTokenRepo.update(
+      { userId: user.id, isUsed: false },
+      { isUsed: true },
+    );
+
+    // Generate secure token
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await this.passwordResetTokenRepo.save({
+      userId: user.id,
+      token,
+      expiresAt,
+      isUsed: false,
+    });
+
+    // In production this would send an email
+    // For portfolio: log the reset link so it can be tested
+    // eslint-disable-next-line no-console
+    console.log(`\n[PASSWORD RESET] Reset link for ${email}:`);
+    // eslint-disable-next-line no-console
+    console.log(`http://localhost:5173/reset-password?token=${token}\n`);
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const resetToken = await this.passwordResetTokenRepo.findOne({
+      where: { token, isUsed: false },
+      relations: ['user'],
+    });
+
+    if (!resetToken) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    if (new Date() > resetToken.expiresAt) {
+      throw new BadRequestException('Reset token has expired');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
+    await this.usersService.save({ ...resetToken.user, passwordHash });
+
+    // Revoke the token
+    await this.passwordResetTokenRepo.update(resetToken.id, { isUsed: true });
+
+    // Revoke all refresh tokens for security
+    await this.refreshTokenRepo.update(
+      { userId: resetToken.userId, isRevoked: false },
+      { isRevoked: true },
+    );
   }
 
   private generateAccessToken(userId: string, email: string, role: string): string {

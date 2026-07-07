@@ -12,6 +12,8 @@ const wrap = (Component: React.ComponentType) => (
 const LandingPage = lazy(() => import('../pages/LandingPage'));
 const LoginPage = lazy(() => import('../pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('../pages/auth/RegisterPage'));
+const ForgotPasswordPage = lazy(() => import('../pages/auth/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('../pages/auth/ResetPasswordPage'));
 
 const PatientDashboard = lazy(() => import('../pages/patient/DashboardPage'));
 const PatientHospitals = lazy(() => import('../pages/patient/HospitalsPage'));
@@ -44,6 +46,8 @@ export const router = createBrowserRouter([
   { path: '/', element: wrap(LandingPage) },
   { path: '/login', element: wrap(LoginPage) },
   { path: '/register', element: wrap(RegisterPage) },
+  { path: '/forgot-password', element: wrap(ForgotPasswordPage) },
+  { path: '/reset-password', element: wrap(ResetPasswordPage) },
   {
     element: <ProtectedRoute allowedRoles={[Role.PATIENT]}><DashboardLayout /></ProtectedRoute>,
     children: [
