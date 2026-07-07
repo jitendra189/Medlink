@@ -3,17 +3,43 @@ dist/
 build/
 .turbo/
 *.tsbuildinfo
+
+# Environment secrets — never commit
 .env
 .env.*
 !.env.example
-.DS_Store
-coverage/
-.nyc_output/
-*.log
-.superpowers/
-.vscode/
-.idea/
-Thumbs.db
-Desktop.ini
+
+# Old hackathon files — not part of the rebuild
+client/
+server/
+ambulance-tracking-module/
+doctor-appointment.html
+doctor-appointment.css
+doctor-appointment.js
+nodemon.json
+
+# Uploaded files
 uploads/*
 !uploads/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editor files
+.vscode/
+.idea/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Logs
+*.log
+
+# Superpowers internal
+.superpowers/
+
+# Session files
+*.system-reminder.txt
