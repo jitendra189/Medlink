@@ -100,6 +100,8 @@ Browser → Netlify (React SPA)
 
 ## Quick Start
 
+> **New to the project?** See the full step-by-step guide: [docs/LOCAL-SETUP.md](docs/LOCAL-SETUP.md)
+
 ### Prerequisites
 - Node.js 20+, pnpm 9+, Docker Desktop
 
