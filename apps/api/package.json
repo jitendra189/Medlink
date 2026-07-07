@@ -11,7 +11,8 @@
     "lint": "eslint \"{src,test}/**/*.ts\" --fix",
     "typecheck": "tsc --noEmit",
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/database/data-source.ts",
-    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/database/data-source.ts"
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/database/data-source.ts",
+    "seed": "ts-node -r tsconfig-paths/register -r dotenv/config src/database/seeds/seed.ts"
   },
   "dependencies": {
     "@medlink/shared": "workspace:*",
@@ -59,6 +60,7 @@
     "supertest": "^7.0.0",
     "ts-jest": "^29.2.0",
     "ts-node": "^10.9.0",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.5.0"
   },
   "jest": {
@@ -79,6 +81,7 @@
       "!**/database/entities/**",
       "!**/database/data-source.ts",
       "!**/database/migrations/**",
+      "!**/database/seeds/**",
       "!**/common/filters/**",
       "!**/common/interceptors/**",
       "!**/gateways/**",
