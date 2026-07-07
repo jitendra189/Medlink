@@ -1,4 +1,5 @@
 import { useAuthStore } from '../../stores/auth.store';
+import { AvatarUpload } from '../../components/ui/AvatarUpload';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
@@ -12,7 +13,13 @@ function getInitials(name?: string) {
 }
 
 export default function DriverProfilePage() {
-  const { user } = useAuthStore();
+  const { user, accessToken, setAuth } = useAuthStore();
+
+  function handleAvatarUpload(url: string) {
+    if (user && accessToken) {
+      setAuth({ ...user, avatarUrl: url }, accessToken);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -23,9 +30,13 @@ export default function DriverProfilePage() {
 
       <Card>
         <CardContent className="flex flex-col items-center gap-4 py-8 text-center md:flex-row md:text-left">
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-emerald-500 text-2xl font-bold text-white shadow-glow-sm">
-            {getInitials(user?.name)}
-          </div>
+          <AvatarUpload
+            currentUrl={user?.avatarUrl}
+            initials={getInitials(user?.name)}
+            onUpload={handleAvatarUpload}
+            size="lg"
+            gradient="from-amber-500 to-emerald-500"
+          />
           <div className="flex-1">
             <h2 className="text-2xl font-bold text-surface-900">{user?.name}</h2>
             <p className="text-sm text-surface-500">{user?.email}</p>

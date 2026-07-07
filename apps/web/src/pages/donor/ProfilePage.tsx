@@ -1,6 +1,7 @@
 import { useAuthStore } from '../../stores/auth.store';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { bloodService } from '../../services/blood.service';
+import { AvatarUpload } from '../../components/ui/AvatarUpload';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
@@ -15,7 +16,7 @@ function getInitials(name?: string) {
 }
 
 export default function DonorProfilePage() {
-  const { user } = useAuthStore();
+  const { user, accessToken, setAuth } = useAuthStore();
   const qc = useQueryClient();
   const { data: dashboard, isLoading } = useQuery({
     queryKey: ['donor-dashboard'], queryFn: bloodService.getDashboard,
@@ -24,6 +25,12 @@ export default function DonorProfilePage() {
     mutationFn: bloodService.toggleAvailability,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['donor-dashboard'] }),
   });
+
+  function handleAvatarUpload(url: string) {
+    if (user && accessToken) {
+      setAuth({ ...user, avatarUrl: url }, accessToken);
+    }
+  }
 
   if (isLoading) return <PageSpinner />;
   const d = dashboard as any;
@@ -37,9 +44,13 @@ export default function DonorProfilePage() {
 
       <Card>
         <CardContent className="flex flex-col items-center gap-4 py-8 text-center md:flex-row md:text-left">
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-emerald-500 text-2xl font-bold text-white shadow-glow-sm">
-            {getInitials(user?.name)}
-          </div>
+          <AvatarUpload
+            currentUrl={user?.avatarUrl}
+            initials={getInitials(user?.name)}
+            onUpload={handleAvatarUpload}
+            size="lg"
+            gradient="from-rose-500 to-emerald-500"
+          />
           <div className="flex-1">
             <div className="flex flex-col items-center gap-2 md:flex-row md:items-center">
               <h2 className="text-2xl font-bold text-surface-900">{user?.name}</h2>

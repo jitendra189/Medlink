@@ -21,4 +21,9 @@ export class UsersService {
   save(user: Partial<UserEntity>): Promise<UserEntity> {
     return this.userRepo.save(user);
   }
+
+  async updateAvatar(userId: string, avatarUrl: string): Promise<UserEntity> {
+    await this.userRepo.update(userId, { avatarUrl });
+    return this.userRepo.findOneOrFail({ where: { id: userId } });
+  }
 }

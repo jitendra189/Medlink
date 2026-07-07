@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { hospitalsService } from '../../services/hospitals.service';
+import { useAuthStore } from '../../stores/auth.store';
+import { AvatarUpload } from '../../components/ui/AvatarUpload';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
@@ -7,10 +9,23 @@ import { Badge } from '../../components/ui/Badge';
 import { PageSpinner } from '../../components/ui/Spinner';
 import { Building2, MapPin, Phone, Star } from 'lucide-react';
 
+function getInitials(name?: string) {
+  if (!name) return 'H';
+  const parts = name.trim().split(/\s+/);
+  return (parts[0][0] + (parts[1]?.[0] ?? '')).toUpperCase();
+}
+
 export default function HospitalProfilePage() {
+  const { user, accessToken, setAuth } = useAuthStore();
   const { data: hospital, isLoading } = useQuery({
     queryKey: ['hospital-dashboard'], queryFn: hospitalsService.getDashboard,
   });
+
+  function handleAvatarUpload(url: string) {
+    if (user && accessToken) {
+      setAuth({ ...user, avatarUrl: url }, accessToken);
+    }
+  }
 
   if (isLoading) return <PageSpinner />;
 
@@ -23,11 +38,17 @@ export default function HospitalProfilePage() {
 
       <Card>
         <CardContent className="flex flex-col items-center gap-4 py-8 md:flex-row md:items-start md:text-left">
-          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-emerald-500 text-white shadow-glow-sm">
-            <Building2 className="h-9 w-9" />
-          </div>
+          <AvatarUpload
+            currentUrl={user?.avatarUrl}
+            initials={getInitials(hospital?.name)}
+            onUpload={handleAvatarUpload}
+            size="lg"
+          />
           <div className="flex-1 text-center md:text-left">
-            <h2 className="text-2xl font-bold text-surface-900">{hospital?.name}</h2>
+            <h2 className="text-2xl font-bold text-surface-900 inline-flex items-center gap-2">
+              <Building2 className="h-6 w-6 text-brand-600" />
+              {hospital?.name}
+            </h2>
             <p className="mt-1 flex items-center justify-center gap-1 text-sm text-surface-500 md:justify-start">
               <MapPin className="h-3.5 w-3.5" />
               {[hospital?.address, hospital?.city, hospital?.state].filter(Boolean).join(', ') || '—'}

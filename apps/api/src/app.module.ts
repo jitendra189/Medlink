@@ -15,6 +15,7 @@ import { AmbulanceModule } from './ambulance/ambulance.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { GatewaysModule } from './gateways/gateways.module';
 import { HealthModule } from './health/health.module';
+import { UploadsModule } from './uploads/uploads.module';
 import { THROTTLE_TTL_SECONDS, THROTTLE_LIMIT } from '@medlink/shared';
 
 @Module({
@@ -34,6 +35,7 @@ import { THROTTLE_TTL_SECONDS, THROTTLE_LIMIT } from '@medlink/shared';
     NotificationsModule,
     GatewaysModule,
     HealthModule,
+    UploadsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
