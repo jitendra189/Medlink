@@ -52,7 +52,7 @@ export class EmergencyService {
     return this.findById(id);
   }
 
-  async reject(id: string): Promise<EmergencyRequestEntity> {
+  async reject(id: string, hospitalId: string): Promise<EmergencyRequestEntity> {
     const result = await this.emergencyRepo.update(
       { id, status: EmergencyStatus.PENDING },
       { status: EmergencyStatus.REJECTED },
@@ -65,6 +65,10 @@ export class EmergencyService {
       );
     }
 
+    // A pending request has no assigned hospital, so the accepting/rejecting hospital
+    // is the actor performing the transition. The atomic status check above prevents
+    // another hospital from racing to mutate the same request.
+    void hospitalId;
     return this.findById(id);
   }
 
@@ -82,14 +86,17 @@ export class EmergencyService {
     return this.emergencyRepo.save(request);
   }
 
-  async resolve(id: string): Promise<EmergencyRequestEntity> {
+  async resolve(id: string, hospitalId: string): Promise<EmergencyRequestEntity> {
     const result = await this.emergencyRepo.update(
-      { id, status: EmergencyStatus.ACCEPTED },
+      { id, status: EmergencyStatus.ACCEPTED, hospitalId },
       { status: EmergencyStatus.RESOLVED, resolvedAt: new Date() },
     );
 
     if (!result.affected) {
       const request = await this.findById(id);
+      if (request.status === EmergencyStatus.ACCEPTED && request.hospitalId !== hospitalId) {
+        throw new ForbiddenException('Emergency request is assigned to another hospital');
+      }
       throw new ConflictException(
         `Emergency request cannot be resolved from status ${request.status}`,
       );
