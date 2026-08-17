@@ -13,7 +13,7 @@ import { PasswordResetTokenEntity } from '../database/entities/password-reset-to
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
-import { BCRYPT_SALT_ROUNDS, REFRESH_TOKEN_EXPIRY_DAYS } from '@medlink/shared';
+import { BCRYPT_SALT_ROUNDS, REFRESH_TOKEN_EXPIRY_DAYS, Role } from '@medlink/shared';
 
 @Injectable()
 export class AuthService {
@@ -42,7 +42,8 @@ export class AuthService {
       name: dto.name,
       email: dto.email,
       passwordHash,
-      role: dto.role,
+      // Hospital and driver accounts must be provisioned by an authorized workflow.
+      role: dto.role ?? Role.PATIENT,
       phone: dto.phone,
     });
 
