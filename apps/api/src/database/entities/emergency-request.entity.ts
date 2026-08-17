@@ -49,7 +49,7 @@ export class EmergencyRequestEntity {
   description!: string;
 
   @Column({ name: 'resolved_at', nullable: true, type: 'timestamp' })
-  resolvedAt!: Date;
+  resolvedAt!: Date | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
