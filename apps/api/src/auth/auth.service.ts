@@ -106,28 +106,31 @@ export class AuthService {
       { isUsed: true },
     );
 
-    // Generate secure token
+    // Keep only a hash in the database so a database leak cannot directly reset an account.
     const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = this.hashResetToken(token);
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
     await this.passwordResetTokenRepo.save({
       userId: user.id,
-      token,
+      token: tokenHash,
       expiresAt,
       isUsed: false,
     });
 
-    // In production this would send an email
-    // For portfolio: log the reset link so it can be tested
-    // eslint-disable-next-line no-console
-    console.log(`\n[PASSWORD RESET] Reset link for ${email}:`);
-    // eslint-disable-next-line no-console
-    console.log(`http://localhost:5173/reset-password?token=${token}\n`);
+    // Email delivery is intentionally not implemented yet. Never log reset tokens in production.
+    if (process.env.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
+      console.log(`\n[PASSWORD RESET] Reset link for ${email}:`);
+      // eslint-disable-next-line no-console
+      console.log(`http://localhost:5173/reset-password?token=${token}\n`);
+    }
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
+    const tokenHash = this.hashResetToken(token);
     const resetToken = await this.passwordResetTokenRepo.findOne({
-      where: { token, isUsed: false },
+      where: { token: tokenHash, isUsed: false },
       relations: ['user'],
     });
 
@@ -150,6 +153,10 @@ export class AuthService {
       { userId: resetToken.userId, isRevoked: false },
       { isRevoked: true },
     );
+  }
+
+  private hashResetToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex');
   }
 
   private generateAccessToken(userId: string, email: string, role: string): string {
