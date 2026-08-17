@@ -48,9 +48,13 @@ export class AuthService {
     });
 
     const accessToken = this.generateAccessToken(user.id, user.email, user.role);
-    await this.createRefreshToken(user.id);
+    const refreshToken = await this.createRefreshToken(user.id);
 
-    return { accessToken, user: { id: user.id, name: user.name, email: user.email, role: user.role } };
+    return {
+      accessToken,
+      refreshToken: refreshToken.token,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+    };
   }
 
   async login(dto: LoginDto): Promise<AuthResponseDto> {
@@ -65,9 +69,13 @@ export class AuthService {
       { userId: user.id, isRevoked: false },
       { isRevoked: true },
     );
-    await this.createRefreshToken(user.id);
+    const refreshToken = await this.createRefreshToken(user.id);
 
-    return { accessToken, user: { id: user.id, name: user.name, email: user.email, role: user.role } };
+    return {
+      accessToken,
+      refreshToken: refreshToken.token,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+    };
   }
 
   async refresh(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
