@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { HealthController } from './health.controller';
+import { DatabaseModule } from '../database/database.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([])],
+  imports: [DatabaseModule],
   controllers: [HealthController],
 })
 export class HealthModule {}
