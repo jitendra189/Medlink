@@ -20,10 +20,20 @@ import {
 } from '@medlink/shared';
 import { AmbulanceDriverEntity } from '../database/entities/ambulance-driver.entity';
 import { EmergencyRequestEntity } from '../database/entities/emergency-request.entity';
+import { UserEntity } from '../database/entities/user.entity';
 
 interface DriverLocationUpdate {
   lat: number;
   lng: number;
+}
+
+interface AuthenticatedSocketData {
+  userId: string;
+  role: Role;
+}
+
+function isValidRole(value: unknown): value is Role {
+  return Object.values(Role).includes(value as Role);
 }
 
 @WebSocketGateway({
@@ -44,6 +54,8 @@ export class MedlinkGateway implements OnGatewayConnection, OnGatewayDisconnect 
     private readonly driverRepo: Repository<AmbulanceDriverEntity>,
     @InjectRepository(EmergencyRequestEntity)
     private readonly emergencyRepo: Repository<EmergencyRequestEntity>,
+    @InjectRepository(UserEntity)
+    private readonly userRepo: Repository<UserEntity>,
   ) {}
 
   async handleConnection(client: Socket) {
@@ -61,17 +73,26 @@ export class MedlinkGateway implements OnGatewayConnection, OnGatewayDisconnect 
         secret: this.config.get<string>('JWT_SECRET'),
       });
 
-      if (!payload.sub || !payload.role) {
+      if (!payload.sub || !isValidRole(payload.role)) {
         client.disconnect();
         return;
       }
 
-      client.data.userId = payload.sub;
-      client.data.role = payload.role;
+      const user = await this.userRepo.findOne({ where: { id: payload.sub } });
+      if (!user || !user.isActive || user.role !== payload.role) {
+        client.disconnect();
+        return;
+      }
 
-      client.join(SOCKET_ROOMS.PATIENT(payload.sub));
-      if (payload.role === Role.HOSPITAL) client.join(SOCKET_ROOMS.HOSPITALS);
-      if (payload.role === Role.DONOR) client.join(SOCKET_ROOMS.DONORS);
+      const data: AuthenticatedSocketData = {
+        userId: user.id,
+        role: user.role,
+      };
+      client.data = data;
+
+      if (user.role === Role.PATIENT) client.join(SOCKET_ROOMS.PATIENT(user.id));
+      if (user.role === Role.HOSPITAL) client.join(SOCKET_ROOMS.HOSPITALS);
+      if (user.role === Role.DONOR) client.join(SOCKET_ROOMS.DONORS);
     } catch {
       client.disconnect();
     }
@@ -125,33 +146,80 @@ export class MedlinkGateway implements OnGatewayConnection, OnGatewayDisconnect 
       .emit(SOCKET_EVENTS.DRIVER_LOCATION_BROADCAST, {
         lat: data.lat,
         lng: data.lng,
-        driverId: driver.id,
-        emergencyId: emergency.id,
         updatedAt: driver.lastLocationAt,
       });
   }
 
   emitNewEmergency(emergency: unknown) {
-    this.server.to(SOCKET_ROOMS.HOSPITALS).emit(SOCKET_EVENTS.EMERGENCY_NEW, emergency);
+    const value = emergency as Partial<EmergencyRequestEntity>;
+    this.server.to(SOCKET_ROOMS.HOSPITALS).emit(SOCKET_EVENTS.EMERGENCY_NEW, {
+      id: value.id,
+      type: value.type,
+      status: value.status,
+      patientLat: value.patientLat,
+      patientLng: value.patientLng,
+      hospitalId: value.hospitalId,
+      driverId: value.driverId,
+      createdAt: value.createdAt,
+      updatedAt: value.updatedAt,
+    });
   }
 
   emitEmergencyUpdated(patientId: string, emergency: unknown) {
-    this.server.to(SOCKET_ROOMS.PATIENT(patientId)).emit(SOCKET_EVENTS.EMERGENCY_UPDATED, emergency);
+    const value = emergency as Partial<EmergencyRequestEntity>;
+    this.server.to(SOCKET_ROOMS.PATIENT(patientId)).emit(SOCKET_EVENTS.EMERGENCY_UPDATED, {
+      id: value.id,
+      type: value.type,
+      status: value.status,
+      patientLat: value.patientLat,
+      patientLng: value.patientLng,
+      hospitalId: value.hospitalId,
+      driverId: value.driverId,
+      createdAt: value.createdAt,
+      updatedAt: value.updatedAt,
+      resolvedAt: value.resolvedAt,
+    });
   }
 
   emitNewBloodRequest(request: unknown) {
-    this.server.to(SOCKET_ROOMS.DONORS).emit(SOCKET_EVENTS.BLOOD_NEW_REQUEST, request);
+    const value = request as Record<string, unknown>;
+    this.server.to(SOCKET_ROOMS.DONORS).emit(SOCKET_EVENTS.BLOOD_NEW_REQUEST, {
+      id: value.id,
+      bloodGroup: value.bloodGroup,
+      units: value.units,
+      hospitalId: value.hospitalId,
+      status: value.status,
+      createdAt: value.createdAt,
+    });
   }
 
   emitBloodRequestFulfilled(patientId: string, request: unknown) {
-    this.server.to(SOCKET_ROOMS.PATIENT(patientId)).emit(SOCKET_EVENTS.BLOOD_REQUEST_FULFILLED, request);
+    const value = request as Record<string, unknown>;
+    this.server.to(SOCKET_ROOMS.PATIENT(patientId)).emit(SOCKET_EVENTS.BLOOD_REQUEST_FULFILLED, {
+      id: value.id,
+      status: value.status,
+      fulfilledAt: value.fulfilledAt,
+    });
   }
 
   emitHospitalResourceUpdate(update: unknown) {
-    this.server.emit(SOCKET_EVENTS.HOSPITAL_RESOURCE_UPDATE, update);
+    const value = update as Record<string, unknown>;
+    this.server.emit(SOCKET_EVENTS.HOSPITAL_RESOURCE_UPDATE, {
+      hospitalId: value.hospitalId,
+      resourceType: value.resourceType,
+      available: value.available,
+      updatedAt: value.updatedAt,
+    });
   }
 
   emitNotification(userId: string, notification: unknown) {
-    this.server.to(SOCKET_ROOMS.PATIENT(userId)).emit(SOCKET_EVENTS.NOTIFICATION_NEW, notification);
+    const value = notification as Record<string, unknown>;
+    this.server.to(SOCKET_ROOMS.PATIENT(userId)).emit(SOCKET_EVENTS.NOTIFICATION_NEW, {
+      id: value.id,
+      type: value.type,
+      title: value.title,
+      message: value.message,
+      createdAt: value.createdAt,
+    });
   }
 }
