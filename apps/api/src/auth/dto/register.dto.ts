@@ -19,9 +19,10 @@ export class RegisterDto {
   })
   password!: string;
 
-  @ApiProperty({ enum: Role })
-  @IsEnum(Role)
-  role!: Role;
+  @ApiPropertyOptional({ enum: [Role.PATIENT, Role.DONOR], default: Role.PATIENT })
+  @IsOptional()
+  @IsEnum([Role.PATIENT, Role.DONOR])
+  role?: Role.PATIENT | Role.DONOR;
 
   @ApiPropertyOptional({ example: '+919876543210' })
   @IsOptional()
