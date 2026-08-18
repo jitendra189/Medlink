@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import axios from 'axios';
 import { RouterProvider } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { router } from './router';
@@ -15,7 +16,7 @@ export default function App() {
 
     const bootstrapAuth = async () => {
       try {
-        const refreshResponse = await api.post('/auth/refresh', {}, { _skipAuthRefresh: true });
+        const refreshResponse = await axios.post('/api/v1/auth/refresh', {}, { withCredentials: true });
         const refreshedToken = refreshResponse.data.data?.accessToken ?? refreshResponse.data.accessToken;
         if (!refreshedToken) throw new Error('Refresh response did not contain an access token');
 
