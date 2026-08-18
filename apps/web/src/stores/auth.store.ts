@@ -35,10 +35,20 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'medlink-auth',
+      version: 2,
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
+      migrate: (persistedState) => {
+        const state = persistedState as Partial<AuthState> | undefined;
+        return {
+          user: state?.user ?? null,
+          accessToken: null,
+          isAuthenticated: state?.isAuthenticated ?? false,
+          authReady: false,
+        };
+      },
     },
   ),
 );
