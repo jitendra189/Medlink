@@ -1,9 +1,15 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AmbulanceDriverEntity } from '../database/entities/ambulance-driver.entity';
+import { EmergencyRequestEntity } from '../database/entities/emergency-request.entity';
 import { MedlinkGateway } from './medlink.gateway';
 
 @Module({
-  imports: [JwtModule.register({})],
+  imports: [
+    JwtModule.register({}),
+    TypeOrmModule.forFeature([AmbulanceDriverEntity, EmergencyRequestEntity]),
+  ],
   providers: [MedlinkGateway],
   exports: [MedlinkGateway],
 })

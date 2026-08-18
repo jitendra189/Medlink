@@ -9,6 +9,7 @@ import { RefreshTokenEntity } from '../database/entities/refresh-token.entity';
 import { PasswordResetTokenEntity } from '../database/entities/password-reset-token.entity';
 import { Role } from '@medlink/shared';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 
 const mockUser = {
   id: 'uuid-1',
@@ -18,6 +19,8 @@ const mockUser = {
   role: Role.PATIENT,
   isActive: true,
 };
+
+const hashToken = (token: string) => crypto.createHash('sha256').update(token).digest('hex');
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -154,7 +157,7 @@ describe('AuthService', () => {
       expect(passwordResetTokenRepo.update).not.toHaveBeenCalled();
     });
 
-    it('invalidates existing tokens and creates a new reset token', async () => {
+    it('invalidates existing tokens and creates a hashed reset token', async () => {
       usersService.findByEmail.mockResolvedValue(mockUser as any);
       passwordResetTokenRepo.update.mockResolvedValue({});
       passwordResetTokenRepo.save.mockResolvedValue({});
@@ -168,7 +171,7 @@ describe('AuthService', () => {
       );
       const savedArg = passwordResetTokenRepo.save.mock.calls[0][0];
       expect(typeof savedArg.token).toBe('string');
-      expect(savedArg.token.length).toBeGreaterThan(20);
+      expect(savedArg.token).toHaveLength(64);
       expect(savedArg.expiresAt).toBeInstanceOf(Date);
     });
   });
@@ -184,19 +187,23 @@ describe('AuthService', () => {
 
     it('throws BadRequestException if token expired', async () => {
       passwordResetTokenRepo.findOne.mockResolvedValue({
-        id: 'rt-1', userId: mockUser.id, token: 'tok', isUsed: false, expiresAt: pastDate, user: mockUser,
+        id: 'rt-1', userId: mockUser.id, token: hashToken('tok'), isUsed: false, expiresAt: pastDate, user: mockUser,
       });
       await expect(service.resetPassword('tok', 'NewPass123')).rejects.toThrow(BadRequestException);
     });
 
     it('updates password, revokes token, and revokes refresh tokens on success', async () => {
       passwordResetTokenRepo.findOne.mockResolvedValue({
-        id: 'rt-1', userId: mockUser.id, token: 'tok', isUsed: false, expiresAt: futureDate, user: { ...mockUser },
+        id: 'rt-1', userId: mockUser.id, token: hashToken('tok'), isUsed: false, expiresAt: futureDate, user: { ...mockUser },
       });
       usersService.save.mockResolvedValue(mockUser as any);
       passwordResetTokenRepo.update.mockResolvedValue({});
       refreshTokenRepo.update.mockResolvedValue({});
       await service.resetPassword('tok', 'NewPass123');
+      expect(passwordResetTokenRepo.findOne).toHaveBeenCalledWith({
+        where: { token: hashToken('tok'), isUsed: false },
+        relations: ['user'],
+      });
       expect(usersService.save).toHaveBeenCalledWith(
         expect.objectContaining({ id: mockUser.id, passwordHash: expect.any(String) }),
       );

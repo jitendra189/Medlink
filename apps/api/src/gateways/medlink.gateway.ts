@@ -1,13 +1,38 @@
 import {
-  WebSocketGateway, WebSocketServer, SubscribeMessage,
-  OnGatewayConnection, OnGatewayDisconnect, MessageBody, ConnectedSocket,
+  WebSocketGateway,
+  WebSocketServer,
+  SubscribeMessage,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  MessageBody,
+  ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { SOCKET_EVENTS, SOCKET_ROOMS, Role } from '@medlink/shared';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import {
+  EmergencyStatus,
+  Role,
+  SOCKET_EVENTS,
+  SOCKET_ROOMS,
+} from '@medlink/shared';
+import { AmbulanceDriverEntity } from '../database/entities/ambulance-driver.entity';
+import { EmergencyRequestEntity } from '../database/entities/emergency-request.entity';
 
-@WebSocketGateway({ cors: { origin: '*' }, namespace: '/' })
+interface DriverLocationUpdate {
+  lat: number;
+  lng: number;
+}
+
+@WebSocketGateway({
+  cors: {
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    credentials: true,
+  },
+  namespace: '/',
+})
 export class MedlinkGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
@@ -15,13 +40,32 @@ export class MedlinkGateway implements OnGatewayConnection, OnGatewayDisconnect 
   constructor(
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
+    @InjectRepository(AmbulanceDriverEntity)
+    private readonly driverRepo: Repository<AmbulanceDriverEntity>,
+    @InjectRepository(EmergencyRequestEntity)
+    private readonly emergencyRepo: Repository<EmergencyRequestEntity>,
   ) {}
 
   async handleConnection(client: Socket) {
     try {
-      const token = client.handshake.auth?.token || client.handshake.headers?.authorization?.replace('Bearer ', '');
-      if (!token) { client.disconnect(); return; }
-      const payload = this.jwtService.verify(token, { secret: this.config.get<string>('JWT_SECRET') });
+      const token =
+        client.handshake.auth?.token ||
+        client.handshake.headers?.authorization?.replace(/^Bearer\s+/i, '');
+
+      if (!token) {
+        client.disconnect();
+        return;
+      }
+
+      const payload = this.jwtService.verify(token, {
+        secret: this.config.get<string>('JWT_SECRET'),
+      });
+
+      if (!payload.sub || !payload.role) {
+        client.disconnect();
+        return;
+      }
+
       client.data.userId = payload.sub;
       client.data.role = payload.role;
 
@@ -38,9 +82,53 @@ export class MedlinkGateway implements OnGatewayConnection, OnGatewayDisconnect 
   }
 
   @SubscribeMessage(SOCKET_EVENTS.DRIVER_LOCATION_UPDATE)
-  handleDriverLocation(@MessageBody() data: { lat: number; lng: number }, @ConnectedSocket() client: Socket) {
-    const driverId = client.data.userId as string;
-    client.to(SOCKET_ROOMS.PATIENT(driverId)).emit(SOCKET_EVENTS.DRIVER_LOCATION_BROADCAST, { lat: data.lat, lng: data.lng, driverId });
+  async handleDriverLocation(
+    @MessageBody() data: DriverLocationUpdate,
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (client.data.role !== Role.DRIVER) return;
+
+    if (
+      !Number.isFinite(data?.lat) ||
+      !Number.isFinite(data?.lng) ||
+      data.lat < -90 ||
+      data.lat > 90 ||
+      data.lng < -180 ||
+      data.lng > 180
+    ) {
+      return;
+    }
+
+    const driver = await this.driverRepo.findOne({
+      where: { userId: client.data.userId as string },
+    });
+
+    if (!driver) return;
+
+    driver.latitude = data.lat;
+    driver.longitude = data.lng;
+    driver.lastLocationAt = new Date();
+    await this.driverRepo.save(driver);
+
+    const emergency = await this.emergencyRepo.findOne({
+      where: {
+        driverId: driver.id,
+        status: EmergencyStatus.ACCEPTED,
+      },
+      order: { updatedAt: 'DESC' },
+    });
+
+    if (!emergency) return;
+
+    client
+      .to(SOCKET_ROOMS.PATIENT(emergency.patientId))
+      .emit(SOCKET_EVENTS.DRIVER_LOCATION_BROADCAST, {
+        lat: data.lat,
+        lng: data.lng,
+        driverId: driver.id,
+        emergencyId: emergency.id,
+        updatedAt: driver.lastLocationAt,
+      });
   }
 
   emitNewEmergency(emergency: unknown) {
