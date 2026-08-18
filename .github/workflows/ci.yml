@@ -44,6 +44,17 @@ jobs:
       - name: Typecheck
         run: pnpm turbo typecheck
 
+      - name: Database migration smoke test
+        run: pnpm --filter @medlink/api migration:run
+        env:
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          DATABASE_NAME: medlink_test
+          DATABASE_USER: medlink_user
+          DATABASE_PASSWORD: medlink_pass
+          DB_SYNCHRONIZE: 'false'
+          NODE_ENV: test
+
       - name: Test
         run: pnpm turbo test
         env:
