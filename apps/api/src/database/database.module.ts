@@ -32,5 +32,6 @@ import { join } from 'path';
       },
     }),
   ],
+  exports: [TypeOrmModule],
 })
 export class DatabaseModule {}
