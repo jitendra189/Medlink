@@ -1,204 +1,110 @@
-# MedLink — Deployment Guide
+# MedLink — Production Deployment Guide
 
-This guide covers deploying MedLink to **Railway** (API + PostgreSQL) and **Netlify** (frontend).
+This guide covers deploying the API + PostgreSQL on Railway and the frontend on Netlify.
 
-**Time to complete:** ~30 minutes  
-**Cost:** Free (Railway free tier + Netlify free tier)
+> **Important:** This is a deployment checklist, not a guarantee that a third-party platform's current pricing or free tier is available. Verify current platform pricing and limits before deploying.
 
----
+## 1. Prerequisites
 
-## Prerequisites (Personal Laptop)
+- Node.js 20+
+- pnpm 9+
+- Git
+- A Railway project with PostgreSQL
+- A Netlify site
 
-Install these tools before starting:
+## 2. Railway PostgreSQL
 
-| Tool | Install |
-|------|---------|
-| Node.js 20+ | https://nodejs.org → download LTS |
-| pnpm | `npm install -g pnpm` |
-| Git | https://git-scm.com/download/win |
+1. Create a PostgreSQL service in Railway.
+2. Copy its `DATABASE_URL`.
+3. Keep the database private; do not expose PostgreSQL publicly unless your architecture requires it.
 
----
+## 3. Railway API
 
-## Step 1: Clone the Repository
+Deploy the repository using `apps/api/Dockerfile`.
 
-```bash
-git clone https://github.com/jitendra189/Medlink.git
-cd Medlink
-pnpm install
+Set these variables on the API service:
+
+```text
+NODE_ENV=production
+PORT=3000
+DATABASE_URL=<Railway PostgreSQL DATABASE_URL>
+JWT_SECRET=<64+ character cryptographically random secret>
+JWT_ACCESS_EXPIRY=15m
+JWT_REFRESH_EXPIRY_DAYS=7
+FRONTEND_URL=https://YOUR_NETLIFY_DOMAIN
 ```
 
----
+Do not set a production `JWT_SECRET` to a sample value and do not commit secrets to Git.
 
-## Step 2: Deploy PostgreSQL + API on Railway
+The application also supports discrete database variables (`DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_NAME`, `DATABASE_USER`, `DATABASE_PASSWORD`) when `DATABASE_URL` is not used.
 
-### 2.1 Create Railway account
-1. Go to https://railway.app
-2. Click **"Login"** → **"Login with GitHub"**
-3. Authorize Railway to access your GitHub
+### Migration behavior
 
-### 2.2 Create a new project
-1. Click **"New Project"**
-2. Select **"Empty Project"**
-3. Name it `medlink`
+The Railway start command runs TypeORM migrations before starting NestJS:
 
-### 2.3 Add PostgreSQL database
-1. Inside the `medlink` project, click **"+ New"**
-2. Select **"Database"** → **"Add PostgreSQL"**
-3. Wait for it to provision (30 seconds)
-4. Click on the PostgreSQL service → **"Variables"** tab
-5. Copy the `DATABASE_URL` value — you'll need it later
-
-### 2.4 Deploy the API
-1. Inside the `medlink` project, click **"+ New"** again
-2. Select **"GitHub Repo"**
-3. Select your `jitendra189/Medlink` repository
-4. Railway will detect the `railway.json` in the repo root
-
-### 2.5 Set environment variables for the API service
-Click on the API service → **"Variables"** tab → Add these:
-
-```
-DATABASE_URL         = <paste from PostgreSQL service above>
-NODE_ENV             = production
-PORT                 = 3000
-JWT_SECRET           = <run this to generate: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))">
-JWT_ACCESS_EXPIRY    = 15m
-JWT_REFRESH_EXPIRY_DAYS = 7
-FRONTEND_URL         = https://YOUR_NETLIFY_URL (update after Step 3)
+```text
+migration:run → node dist/main
 ```
 
-### 2.6 Trigger deploy
-Click **"Deploy"** on the API service. Watch the build logs — it should complete in 3-5 minutes.
+If a migration fails, the API must not start. Never enable TypeORM `synchronize` in production.
 
-### 2.7 Get your Railway API URL
-Once deployed, click on the API service → **"Settings"** → copy the public URL.
-It looks like: `https://medlink-api-production-xxxx.up.railway.app`
+### Health check
 
-### 2.8 Seed the Railway database
-Run this from your laptop (replace with your actual Railway DATABASE_URL):
+Configure Railway to use:
 
-```bash
-cd Medlink/apps/api
-DATABASE_URL="postgresql://postgres:xxxx@xxxx.railway.app:5432/railway" pnpm seed
+```text
+GET /health
 ```
 
-Expected output:
-```
-✓ Connected to database
-✓ Seeded 3 patients
-✓ Seeded 5 hospitals
-✓ Seeded 10 doctors
-✓ Seeded 6 blood donors
-✓ Seeded 4 ambulance drivers
-✓ Seeded 2 emergency requests
-✓ Seeded 2 blood requests
-✓ Seeded 2 bookings
+The endpoint returns success only when the API is running **and PostgreSQL responds to `SELECT 1`**.
 
-✅ Seed complete!
-```
+## 4. Netlify frontend
 
-### 2.9 Verify API is live
-```bash
-curl https://YOUR_RAILWAY_URL/health
-```
-Expected: `{"success":true,"data":{"status":"ok"}}`
+Configure the frontend to use the deployed API through the repository's `/api` reverse-proxy configuration or the deployed API origin required by your hosting setup.
 
----
+The application Axios client uses `/api/v1` as its runtime base path, so do not add an unused `VITE_API_URL` variable and assume it changes the runtime client.
 
-## Step 3: Deploy Frontend on Netlify
+For the Docker/Nginx deployment, `/api` is proxied to the API service.
 
-### 3.1 Update the API URL in netlify.toml
-Edit `netlify.toml` in the repo root — replace `YOUR_RAILWAY_URL` with your actual Railway URL:
-```toml
-[[redirects]]
-  from   = "/api/*"
-  to     = "https://YOUR_ACTUAL_RAILWAY_URL/api/:splat"
+If using Netlify, configure its `/api/*` redirect/proxy target to the actual Railway API URL. Replace the placeholder before deploying; do not commit placeholder production URLs.
+
+## 5. CORS and cookies
+
+Set Railway `FRONTEND_URL` to the exact HTTPS origin used by the frontend, for example:
+
+```text
+https://medlink.example.com
 ```
 
-Commit and push:
-```bash
-git add netlify.toml
-git commit -m "chore: set Railway API URL in netlify.toml"
-git push origin main
-```
+Do not add a trailing path. The API uses this value for credentialed CORS requests and refresh-token cookies.
 
-### 3.2 Create Netlify account
-1. Go to https://app.netlify.com
-2. Click **"Sign up"** → **"Sign up with GitHub"**
-3. Authorize Netlify
+## 6. Production verification
 
-### 3.3 Create new site
-1. Click **"Add new site"** → **"Import an existing project"**
-2. Select **"GitHub"**
-3. Find and select `jitendra189/Medlink`
+After both services deploy, run [`PRODUCTION-SMOKE-TEST.md`](./PRODUCTION-SMOKE-TEST.md).
 
-### 3.4 Configure build settings
-Netlify will auto-detect the `netlify.toml`. Verify:
-- **Base directory:** `apps/web`
-- **Build command:** `pnpm build`
-- **Publish directory:** `apps/web/dist`
+At minimum verify:
 
-### 3.5 Set environment variables
-In Netlify → Site settings → Environment variables → Add:
-```
-VITE_API_URL = https://YOUR_RAILWAY_URL
-```
+- frontend loads over HTTPS;
+- `/health` returns `200` with database status `ok`;
+- deployment logs show migrations completed;
+- login, refresh, browser reload, and logout work;
+- authenticated WebSocket flows work;
+- uploads reject invalid content;
+- unauthenticated file retrieval is rejected.
 
-### 3.6 Deploy
-Click **"Deploy site"**. Build takes 2-3 minutes.
+## 7. Demo/seed data
 
-### 3.7 Get your Netlify URL
-After deploy, Netlify shows your URL: `https://medlink-xxxx.netlify.app`
+Do not seed demo credentials into a production environment. If seed data is required for a staging environment, use staging-only accounts and passwords and keep them out of public documentation.
 
-You can also set a custom site name: Site settings → General → Change site name.
+## 8. Rollback
 
----
+Before applying a release:
 
-## Step 4: Update Railway FRONTEND_URL
+1. Confirm the database backup/restore procedure is available.
+2. Review pending migrations.
+3. Deploy the API image.
+4. Confirm migrations succeed.
+5. Run the smoke test.
+6. If the release is unhealthy, roll back the application image and follow the database migration rollback procedure appropriate for the migration that was deployed.
 
-1. Go back to Railway → API service → Variables
-2. Update `FRONTEND_URL` = `https://YOUR_NETLIFY_URL`
-3. Railway will auto-redeploy
-
----
-
-## Step 5: Verify Everything Works
-
-1. Open your Netlify URL — landing page should load
-2. Click "Get Started" → Register a patient account
-3. Login with `amit@medlink.demo` / `Test@12345`
-4. You should see 5 hospitals in the hospital list
-5. Open API docs: `https://YOUR_RAILWAY_URL/api/docs`
-
----
-
-## Troubleshooting
-
-**API not starting on Railway:**
-- Check build logs for errors
-- Verify all environment variables are set
-- Make sure `DATABASE_URL` is correct
-
-**Frontend shows blank page:**
-- Open browser DevTools → Console tab
-- Check for CORS errors — verify `FRONTEND_URL` in Railway matches your Netlify URL exactly
-
-**Seed fails with connection error:**
-- Double-check `DATABASE_URL` — Railway PostgreSQL URL format: `postgresql://postgres:password@host:port/railway`
-
-**Login not working after deploy:**
-- Verify `FRONTEND_URL` in Railway env vars matches Netlify URL (including https://)
-- Check API logs in Railway dashboard
-
----
-
-## Demo Accounts
-
-All use password: `Test@12345`
-
-| Role | Email |
-|------|-------|
-| Patient | amit@medlink.demo |
-| Hospital Admin | apollo_hospital@medlink.demo |
-| Blood Donor | kiran@medlink.demo |
-| Ambulance Driver | driver1@medlink.demo |
+Do not manually edit production schema to repair a failed migration.

@@ -5,7 +5,7 @@
     "dockerfilePath": "apps/api/Dockerfile"
   },
   "deploy": {
-    "startCommand": "node dist/main",
+    "startCommand": "node ./node_modules/typeorm/cli.js migration:run -d dist/database/data-source.js && node dist/main",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 30,
     "restartPolicyType": "ON_FAILURE",
