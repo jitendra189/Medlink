@@ -71,3 +71,9 @@ jobs:
 
       - name: Build
         run: pnpm turbo build
+
+      - name: Build API Docker image
+        run: docker build --tag medlink-api:ci -f apps/api/Dockerfile .
+
+      - name: Build web Docker image
+        run: docker build --tag medlink-web:ci -f apps/web/Dockerfile .
