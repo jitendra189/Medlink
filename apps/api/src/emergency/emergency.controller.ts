@@ -57,8 +57,9 @@ export class EmergencyController {
   @UseGuards(RolesGuard)
   @Roles(Role.HOSPITAL)
   @ApiOperation({ summary: 'Reject an emergency request' })
-  reject(@Param('id') id: string) {
-    return this.emergencyService.reject(id);
+  async reject(@CurrentUser() user: UserEntity, @Param('id') id: string) {
+    const hospital = await this.hospitalsService.findByUserId(user.id);
+    return this.emergencyService.reject(id, hospital.id);
   }
 
   @Put(':id/cancel')
@@ -73,7 +74,8 @@ export class EmergencyController {
   @UseGuards(RolesGuard)
   @Roles(Role.HOSPITAL)
   @ApiOperation({ summary: 'Mark emergency as resolved' })
-  resolve(@Param('id') id: string) {
-    return this.emergencyService.resolve(id);
+  async resolve(@CurrentUser() user: UserEntity, @Param('id') id: string) {
+    const hospital = await this.hospitalsService.findByUserId(user.id);
+    return this.emergencyService.resolve(id, hospital.id);
   }
 }

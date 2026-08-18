@@ -13,7 +13,7 @@ import { PasswordResetTokenEntity } from '../database/entities/password-reset-to
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
-import { BCRYPT_SALT_ROUNDS, REFRESH_TOKEN_EXPIRY_DAYS } from '@medlink/shared';
+import { BCRYPT_SALT_ROUNDS, REFRESH_TOKEN_EXPIRY_DAYS, Role } from '@medlink/shared';
 
 @Injectable()
 export class AuthService {
@@ -42,14 +42,19 @@ export class AuthService {
       name: dto.name,
       email: dto.email,
       passwordHash,
-      role: dto.role,
+      // Hospital and driver accounts must be provisioned by an authorized workflow.
+      role: dto.role ?? Role.PATIENT,
       phone: dto.phone,
     });
 
     const accessToken = this.generateAccessToken(user.id, user.email, user.role);
-    await this.createRefreshToken(user.id);
+    const refreshToken = await this.createRefreshToken(user.id);
 
-    return { accessToken, user: { id: user.id, name: user.name, email: user.email, role: user.role } };
+    return {
+      accessToken,
+      refreshToken: refreshToken.token,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+    };
   }
 
   async login(dto: LoginDto): Promise<AuthResponseDto> {
@@ -64,9 +69,13 @@ export class AuthService {
       { userId: user.id, isRevoked: false },
       { isRevoked: true },
     );
-    await this.createRefreshToken(user.id);
+    const refreshToken = await this.createRefreshToken(user.id);
 
-    return { accessToken, user: { id: user.id, name: user.name, email: user.email, role: user.role } };
+    return {
+      accessToken,
+      refreshToken: refreshToken.token,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+    };
   }
 
   async refresh(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
@@ -106,28 +115,31 @@ export class AuthService {
       { isUsed: true },
     );
 
-    // Generate secure token
+    // Keep only a hash in the database so a database leak cannot directly reset an account.
     const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = this.hashResetToken(token);
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
     await this.passwordResetTokenRepo.save({
       userId: user.id,
-      token,
+      token: tokenHash,
       expiresAt,
       isUsed: false,
     });
 
-    // In production this would send an email
-    // For portfolio: log the reset link so it can be tested
-    // eslint-disable-next-line no-console
-    console.log(`\n[PASSWORD RESET] Reset link for ${email}:`);
-    // eslint-disable-next-line no-console
-    console.log(`http://localhost:5173/reset-password?token=${token}\n`);
+    // Email delivery is intentionally not implemented yet. Never log reset tokens in production.
+    if (process.env.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
+      console.log(`\n[PASSWORD RESET] Reset link for ${email}:`);
+      // eslint-disable-next-line no-console
+      console.log(`http://localhost:5173/reset-password?token=${token}\n`);
+    }
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
+    const tokenHash = this.hashResetToken(token);
     const resetToken = await this.passwordResetTokenRepo.findOne({
-      where: { token, isUsed: false },
+      where: { token: tokenHash, isUsed: false },
       relations: ['user'],
     });
 
@@ -150,6 +162,10 @@ export class AuthService {
       { userId: resetToken.userId, isRevoked: false },
       { isRevoked: true },
     );
+  }
+
+  private hashResetToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex');
   }
 
   private generateAccessToken(userId: string, email: string, role: string): string {
