@@ -40,6 +40,8 @@ export class UploadsController {
   }
 
   @Get('files/:filename')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   serveFile(@Param('filename') filename: string, @Res() res: Response) {
     const filePath = join(process.cwd(), 'uploads', filename);
     if (!existsSync(filePath)) {
