@@ -1,9 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BookingEntity } from '../database/entities/booking.entity';
 import { CreateBookingDto } from './dto/create-booking.dto';
-import { BookingStatus } from '@medlink/shared';
+import { BookingStatus, Role } from '@medlink/shared';
 
 @Injectable()
 export class BookingsService {
@@ -24,9 +24,28 @@ export class BookingsService {
     return this.bookingRepo.find({ where: { hospitalId }, relations: ['patient', 'doctor'], order: { scheduledAt: 'ASC' } });
   }
 
-  async updateStatus(id: string, status: BookingStatus): Promise<BookingEntity> {
+  async updateStatus(
+    id: string,
+    status: BookingStatus,
+    actorUserId: string,
+    actorRole: Role,
+    hospitalId?: string,
+  ): Promise<BookingEntity> {
     const booking = await this.bookingRepo.findOne({ where: { id } });
     if (!booking) throw new NotFoundException(`Booking ${id} not found`);
+
+    if (actorRole === Role.PATIENT) {
+      if (booking.patientId !== actorUserId || status !== BookingStatus.CANCELLED) {
+        throw new ForbiddenException('You are not authorized to modify this booking');
+      }
+    } else if (actorRole === Role.HOSPITAL) {
+      if (!hospitalId || booking.hospitalId !== hospitalId) {
+        throw new ForbiddenException('You are not authorized to modify this booking');
+      }
+    } else {
+      throw new ForbiddenException('You are not authorized to modify this booking');
+    }
+
     booking.status = status;
     return this.bookingRepo.save(booking);
   }
