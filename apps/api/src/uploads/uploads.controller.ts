@@ -1,13 +1,14 @@
 import {
+  Body,
   Controller,
-  Post,
-  UseInterceptors,
-  UploadedFile,
-  UseGuards,
   Get,
   Param,
+  ParseUUIDPipe,
+  Post,
   Res,
-  Body,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
@@ -46,7 +47,7 @@ export class UploadsController {
   uploadPrescription(
     @CurrentUser() user: UserEntity,
     @UploadedFile() file: Express.Multer.File,
-    @Body('patientId') patientId: string,
+    @Body('patientId', new ParseUUIDPipe()) patientId: string,
   ) {
     return this.fileStorage.store(file, user.id, 'prescription', patientId).then((stored) => ({
       url: `/api/v1/uploads/files/${stored.filename}`,
