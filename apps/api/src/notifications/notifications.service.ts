@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NotificationEntity } from '../database/entities/notification.entity';
@@ -19,8 +19,13 @@ export class NotificationsService {
     return this.notificationRepo.find({ where: { userId }, order: { createdAt: 'DESC' }, take: 50 });
   }
 
-  async markRead(id: string): Promise<void> {
-    await this.notificationRepo.update(id, { isRead: true });
+  async markRead(id: string, userId: string): Promise<void> {
+    const result = await this.notificationRepo.update({ id, userId }, { isRead: true });
+    if (result.affected) return;
+
+    const notification = await this.notificationRepo.findOne({ where: { id } });
+    if (!notification) throw new NotFoundException('Notification not found');
+    throw new ForbiddenException('You are not authorized to modify this notification');
   }
 
   async markAllRead(userId: string): Promise<void> {

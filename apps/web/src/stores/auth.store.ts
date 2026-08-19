@@ -2,12 +2,15 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { IUser } from '@medlink/shared';
 import { connectSocket, disconnectSocket } from '../lib/socket';
+import { setAccessToken } from '../lib/axios';
 
 interface AuthState {
   user: IUser | null;
   accessToken: string | null;
   isAuthenticated: boolean;
+  authReady: boolean;
   setAuth: (user: IUser, accessToken: string) => void;
+  setAuthReady: (ready: boolean) => void;
   clearAuth: () => void;
 }
 
@@ -17,24 +20,35 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       accessToken: null,
       isAuthenticated: false,
+      authReady: false,
       setAuth: (user, accessToken) => {
-        localStorage.setItem('accessToken', accessToken);
+        setAccessToken(accessToken);
         connectSocket(accessToken);
-        set({ user, accessToken, isAuthenticated: true });
+        set({ user, accessToken, isAuthenticated: true, authReady: true });
       },
+      setAuthReady: (ready) => set({ authReady: ready }),
       clearAuth: () => {
-        localStorage.removeItem('accessToken');
+        setAccessToken(null);
         disconnectSocket();
-        set({ user: null, accessToken: null, isAuthenticated: false });
+        set({ user: null, accessToken: null, isAuthenticated: false, authReady: true });
       },
     }),
     {
       name: 'medlink-auth',
+      version: 2,
       partialize: (state) => ({
         user: state.user,
-        accessToken: state.accessToken,
         isAuthenticated: state.isAuthenticated,
       }),
+      migrate: (persistedState) => {
+        const state = persistedState as Partial<AuthState> | undefined;
+        return {
+          user: state?.user ?? null,
+          accessToken: null,
+          isAuthenticated: state?.isAuthenticated ?? false,
+          authReady: false,
+        };
+      },
     },
   ),
 );

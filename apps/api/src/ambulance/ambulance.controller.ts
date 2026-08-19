@@ -41,8 +41,8 @@ export class AmbulanceController {
   }
 
   @Get('track/:driverId')
-  @ApiOperation({ summary: 'Get live driver location for patient tracking' })
-  trackDriver(@Param('driverId') driverId: string) {
-    return this.ambulanceService.getDriverLocation(driverId);
+  @ApiOperation({ summary: 'Get live driver location for an authorized emergency participant' })
+  trackDriver(@CurrentUser() user: UserEntity, @Param('driverId') driverId: string) {
+    return this.ambulanceService.getDriverLocation(driverId, user);
   }
 }

@@ -16,7 +16,7 @@ export class RefreshTokenEntity {
   @JoinColumn({ name: 'user_id' })
   user!: UserEntity;
 
-  @Column({ unique: true })
+  @Column({ unique: true, select: false })
   token!: string;
 
   @Column({ name: 'expires_at', type: 'timestamp' })

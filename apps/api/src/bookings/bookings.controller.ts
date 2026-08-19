@@ -49,21 +49,23 @@ export class BookingsController {
   @UseGuards(RolesGuard)
   @Roles(Role.HOSPITAL)
   @ApiOperation({ summary: 'Confirm a booking' })
-  confirm(@Param('id') id: string) {
-    return this.bookingsService.updateStatus(id, BookingStatus.CONFIRMED);
+  async confirm(@Param('id') id: string, @CurrentUser() user: UserEntity) {
+    const hospital = await this.hospitalsService.findByUserId(user.id);
+    return this.bookingsService.updateStatus(id, BookingStatus.CONFIRMED, user.id, Role.HOSPITAL, hospital.id);
   }
 
   @Put(':id/cancel')
   @ApiOperation({ summary: 'Cancel a booking' })
-  cancel(@Param('id') id: string) {
-    return this.bookingsService.updateStatus(id, BookingStatus.CANCELLED);
+  cancel(@Param('id') id: string, @CurrentUser() user: UserEntity) {
+    return this.bookingsService.updateStatus(id, BookingStatus.CANCELLED, user.id, user.role);
   }
 
   @Put(':id/complete')
   @UseGuards(RolesGuard)
   @Roles(Role.HOSPITAL)
   @ApiOperation({ summary: 'Mark booking as completed' })
-  complete(@Param('id') id: string) {
-    return this.bookingsService.updateStatus(id, BookingStatus.COMPLETED);
+  async complete(@Param('id') id: string, @CurrentUser() user: UserEntity) {
+    const hospital = await this.hospitalsService.findByUserId(user.id);
+    return this.bookingsService.updateStatus(id, BookingStatus.COMPLETED, user.id, Role.HOSPITAL, hospital.id);
   }
 }

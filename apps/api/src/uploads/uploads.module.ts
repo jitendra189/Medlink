@@ -1,29 +1,21 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { MulterModule } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
+import { memoryStorage } from 'multer';
 import { UploadsController } from './uploads.controller';
+import { FileStorageService } from './file-storage.service';
+import { StoredFileEntity } from '../database/entities/stored-file.entity';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([StoredFileEntity]),
     MulterModule.register({
-      storage: diskStorage({
-        destination: join(process.cwd(), 'uploads'),
-        filename: (_req, file, cb) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
-        },
-      }),
+      storage: memoryStorage(),
       limits: { fileSize: 5 * 1024 * 1024 },
-      fileFilter: (_req, file, cb) => {
-        const allowed = /jpeg|jpg|png|gif|pdf/;
-        const ext = allowed.test(extname(file.originalname).toLowerCase());
-        const mime = allowed.test(file.mimetype);
-        if (ext && mime) cb(null, true);
-        else cb(new Error('Only images (JPEG/PNG/GIF) and PDFs are allowed'), false);
-      },
     }),
   ],
+  providers: [FileStorageService],
   controllers: [UploadsController],
+  exports: [FileStorageService],
 })
 export class UploadsModule {}

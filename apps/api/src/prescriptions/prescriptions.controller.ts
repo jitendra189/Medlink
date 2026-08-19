@@ -20,8 +20,8 @@ export class PrescriptionsController {
   @UseGuards(RolesGuard)
   @Roles(Role.HOSPITAL)
   @ApiOperation({ summary: 'Create a prescription for a patient' })
-  create(@Body() dto: CreatePrescriptionDto) {
-    return this.prescriptionsService.create(dto);
+  create(@Body() dto: CreatePrescriptionDto, @CurrentUser() user: UserEntity) {
+    return this.prescriptionsService.create(user.id, dto);
   }
 
   @Get('my')
@@ -34,7 +34,7 @@ export class PrescriptionsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get prescription by ID' })
-  findById(@Param('id') id: string) {
-    return this.prescriptionsService.findById(id);
+  findById(@Param('id') id: string, @CurrentUser() user: UserEntity) {
+    return this.prescriptionsService.findByIdForUser(id, user);
   }
 }
