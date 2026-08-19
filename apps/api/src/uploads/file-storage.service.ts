@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { randomUUID } from 'crypto';
 import { StoredFileEntity } from '../database/entities/stored-file.entity';
@@ -28,12 +28,7 @@ export class FileStorageService {
     return null;
   }
 
-  async store(
-    file: Express.Multer.File,
-    ownerUserId: string,
-    kind: StoredFileKind,
-    patientId?: string,
-  ): Promise<StoredFileEntity> {
+  async store(file: Express.Multer.File, ownerUserId: string, kind: StoredFileKind, patientId?: string): Promise<StoredFileEntity> {
     if (!file?.buffer) throw new BadRequestException('No file provided');
     const detected = this.detectType(file);
     if (!detected) throw new BadRequestException('File content does not match an allowed file type');
@@ -54,7 +49,7 @@ export class FileStorageService {
     try {
       return await this.fileRepo.save({ filename, ownerUserId, patientId: patientId ?? null, kind, mimeType: detected.mimeType });
     } catch (error) {
-      try { await import('fs').then(({ unlinkSync }) => unlinkSync(join(uploadDir, filename))); } catch { /* best effort cleanup */ }
+      try { unlinkSync(join(uploadDir, filename)); } catch { /* best effort cleanup */ }
       throw error;
     }
   }
@@ -64,9 +59,7 @@ export class FileStorageService {
     if (!file) throw new NotFoundException('File not found');
 
     const allowed = file.ownerUserId === user.id || file.patientId === user.id;
-    if (!allowed) {
-      throw new ForbiddenException('You are not authorized to access this file');
-    }
+    if (!allowed) throw new ForbiddenException('You are not authorized to access this file');
 
     if (file.kind === 'prescription' && user.role !== Role.PATIENT && user.id !== file.ownerUserId) {
       throw new ForbiddenException('You are not authorized to access this prescription file');
