@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BloodDonorEntity } from '../database/entities/blood-donor.entity';
 import { BloodRequestEntity } from '../database/entities/blood-request.entity';
+import { UserEntity } from '../database/entities/user.entity';
 import { CreateBloodRequestDto } from './dto/create-blood-request.dto';
 import { SearchDonorsDto } from './dto/search-donors.dto';
 import { BloodGroup, BloodRequestStatus, PaginatedResult } from '@medlink/shared';
@@ -30,7 +31,7 @@ export class BloodService {
   async searchDonors(filters: SearchDonorsDto): Promise<PaginatedResult<BloodDonorEntity>> {
     const { bloodGroup, city, page = 1, limit = 10 } = filters;
     const qb = this.donorRepo.createQueryBuilder('d')
-      .leftJoin('d.user', 'u')
+      .leftJoinAndMapOne('d.user', UserEntity, 'u', 'u.id = d.user_id')
       .addSelect(['u.id', 'u.name'])
       .where('d.is_available = true');
     if (bloodGroup) qb.andWhere('d.blood_group = :bg', { bg: bloodGroup });
