@@ -59,8 +59,8 @@ export class BloodController {
   @UseGuards(RolesGuard)
   @Roles(Role.PATIENT)
   @ApiOperation({ summary: 'Cancel a blood request' })
-  cancel(@Param('id') id: string) {
-    return this.bloodService.cancel(id);
+  cancel(@CurrentUser() user: UserEntity, @Param('id') id: string) {
+    return this.bloodService.cancel(id, user.id);
   }
 
   @Get('dashboard')
