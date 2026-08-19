@@ -29,7 +29,10 @@ export class BloodService {
 
   async searchDonors(filters: SearchDonorsDto): Promise<PaginatedResult<BloodDonorEntity>> {
     const { bloodGroup, city, page = 1, limit = 10 } = filters;
-    const qb = this.donorRepo.createQueryBuilder('d').leftJoinAndSelect('d.user', 'u').where('d.is_available = true');
+    const qb = this.donorRepo.createQueryBuilder('d')
+      .leftJoin('d.user', 'u')
+      .addSelect(['u.id', 'u.name'])
+      .where('d.is_available = true');
     if (bloodGroup) qb.andWhere('d.blood_group = :bg', { bg: bloodGroup });
     if (city) qb.andWhere('LOWER(d.city) LIKE LOWER(:city)', { city: `%${city}%` });
 
@@ -65,12 +68,9 @@ export class BloodService {
         lock: { mode: 'pessimistic_write' },
       });
       if (!request) throw new NotFoundException(`Blood request ${id} not found`);
-      if (request.status !== BloodRequestStatus.PENDING) {
-        throw new ConflictException('Blood request is no longer pending');
-      }
+      if (request.status !== BloodRequestStatus.PENDING) throw new ConflictException('Blood request is no longer pending');
 
-      const compatible = COMPATIBLE_DONORS[request.bloodGroup].includes(donor.bloodGroup);
-      if (!compatible) {
+      if (!COMPATIBLE_DONORS[request.bloodGroup].includes(donor.bloodGroup)) {
         throw new ForbiddenException(`Donor blood group ${donor.bloodGroup} is not compatible with ${request.bloodGroup}`);
       }
 
