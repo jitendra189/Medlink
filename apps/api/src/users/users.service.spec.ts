@@ -17,21 +17,13 @@ describe('UsersService', () => {
   let qb: any;
 
   beforeEach(async () => {
-    qb = {
-      addSelect: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue(mockUser),
-    };
+    qb = { addSelect: jest.fn().mockReturnThis(), where: jest.fn().mockReturnThis(), getOne: jest.fn().mockResolvedValue(mockUser) };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
         {
           provide: getRepositoryToken(UserEntity),
-          useValue: {
-            findOne: jest.fn(),
-            save: jest.fn(),
-            createQueryBuilder: jest.fn().mockReturnValue(qb),
-          },
+          useValue: { findOne: jest.fn(), save: jest.fn(), createQueryBuilder: jest.fn().mockReturnValue(qb) },
         },
       ],
     }).compile();
@@ -40,11 +32,11 @@ describe('UsersService', () => {
     repo = module.get(getRepositoryToken(UserEntity));
   });
 
-  it('findByEmail explicitly selects the password hash for authentication', async () => {
+  it('findByEmail explicitly selects the hidden password hash for authentication', async () => {
     const result = await service.findByEmail('test@example.com');
     expect(result).toEqual(mockUser);
     expect(repo.createQueryBuilder).toHaveBeenCalledWith('user');
-    expect(qb.addSelect).toHaveBeenCalledWith('user.password_hash');
+    expect(qb.addSelect).toHaveBeenCalledWith('user.passwordHash');
     expect(qb.where).toHaveBeenCalledWith('user.email = :email', { email: 'test@example.com' });
   });
 
