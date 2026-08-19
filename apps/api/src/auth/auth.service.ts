@@ -42,7 +42,6 @@ export class AuthService {
       name: dto.name,
       email: dto.email,
       passwordHash,
-      // Hospital and driver accounts must be provisioned by an authorized workflow.
       role: dto.role ?? Role.PATIENT,
       phone: dto.phone,
     });
@@ -65,10 +64,7 @@ export class AuthService {
     if (!valid) throw new UnauthorizedException('Invalid credentials');
 
     const accessToken = this.generateAccessToken(user.id, user.email, user.role);
-    await this.refreshTokenRepo.update(
-      { userId: user.id, isRevoked: false },
-      { isRevoked: true },
-    );
+    await this.refreshTokenRepo.update({ userId: user.id, isRevoked: false }, { isRevoked: true });
     const refreshToken = await this.createRefreshToken(user.id);
 
     return {
@@ -92,7 +88,14 @@ export class AuthService {
       throw new UnauthorizedException('Account deactivated');
     }
 
-    await this.refreshTokenRepo.update(token.id, { isRevoked: true });
+    const rotation = await this.refreshTokenRepo.update(
+      { id: token.id, isRevoked: false },
+      { isRevoked: true },
+    );
+    if (!rotation.affected) {
+      throw new UnauthorizedException('Refresh token has already been used');
+    }
+
     const newRefreshToken = await this.createRefreshToken(token.user.id);
     const accessToken = this.generateAccessToken(token.user.id, token.user.email, token.user.role);
 
@@ -105,20 +108,17 @@ export class AuthService {
   }
 
   async forgotPassword(email: string): Promise<void> {
-    // Always return success (don't leak if email exists)
     const user = await this.usersService.findByEmail(email);
     if (!user) return;
 
-    // Invalidate existing tokens
     await this.passwordResetTokenRepo.update(
       { userId: user.id, isUsed: false },
       { isUsed: true },
     );
 
-    // Keep only a hash in the database so a database leak cannot directly reset an account.
     const token = crypto.randomBytes(32).toString('hex');
     const tokenHash = this.hashResetToken(token);
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
     await this.passwordResetTokenRepo.save({
       userId: user.id,
@@ -127,7 +127,6 @@ export class AuthService {
       isUsed: false,
     });
 
-    // Email delivery is intentionally not implemented yet. Never log reset tokens in production.
     if (process.env.NODE_ENV !== 'production') {
       // eslint-disable-next-line no-console
       console.log(`\n[PASSWORD RESET] Reset link for ${email}:`);
@@ -143,21 +142,12 @@ export class AuthService {
       relations: ['user'],
     });
 
-    if (!resetToken) {
-      throw new BadRequestException('Invalid or expired reset token');
-    }
-
-    if (new Date() > resetToken.expiresAt) {
-      throw new BadRequestException('Reset token has expired');
-    }
+    if (!resetToken) throw new BadRequestException('Invalid or expired reset token');
+    if (new Date() > resetToken.expiresAt) throw new BadRequestException('Reset token has expired');
 
     const passwordHash = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
     await this.usersService.save({ ...resetToken.user, passwordHash });
-
-    // Revoke the token
     await this.passwordResetTokenRepo.update(resetToken.id, { isUsed: true });
-
-    // Revoke all refresh tokens for security
     await this.refreshTokenRepo.update(
       { userId: resetToken.userId, isRevoked: false },
       { isRevoked: true },
