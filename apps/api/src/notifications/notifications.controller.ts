@@ -20,8 +20,8 @@ export class NotificationsController {
 
   @Put(':id/read')
   @ApiOperation({ summary: 'Mark notification as read' })
-  markRead(@Param('id') id: string) {
-    return this.notificationsService.markRead(id);
+  markRead(@Param('id') id: string, @CurrentUser() user: UserEntity) {
+    return this.notificationsService.markRead(id, user.id);
   }
 
   @Put('read-all')
