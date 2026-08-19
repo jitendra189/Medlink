@@ -11,10 +11,10 @@ export class StoredFileEntity {
   @Column({ length: 255 })
   filename!: string;
 
-  @Column({ name: 'owner_user_id' })
+  @Column({ name: 'owner_user_id', type: 'uuid' })
   ownerUserId!: string;
 
-  @Column({ name: 'patient_id', nullable: true })
+  @Column({ name: 'patient_id', type: 'uuid', nullable: true })
   patientId!: string | null;
 
   @Column({ length: 32 })
