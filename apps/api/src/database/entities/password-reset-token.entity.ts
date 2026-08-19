@@ -16,7 +16,7 @@ export class PasswordResetTokenEntity {
   @JoinColumn({ name: 'user_id' })
   user!: UserEntity;
 
-  @Column({ type: 'varchar', length: 255, unique: true })
+  @Column({ type: 'varchar', length: 255, unique: true, select: false })
   token!: string;
 
   @Column({ name: 'expires_at', type: 'timestamp' })
