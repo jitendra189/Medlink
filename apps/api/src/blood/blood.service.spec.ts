@@ -33,7 +33,7 @@ describe('BloodService', () => {
             findOne: jest.fn().mockResolvedValue(mockDonor),
             save: jest.fn().mockResolvedValue(mockDonor),
             createQueryBuilder: jest.fn().mockReturnValue({
-              leftJoin: jest.fn().mockReturnThis(),
+              leftJoinAndMapOne: jest.fn().mockReturnThis(),
               addSelect: jest.fn().mockReturnThis(),
               where: jest.fn().mockReturnThis(),
               andWhere: jest.fn().mockReturnThis(),
