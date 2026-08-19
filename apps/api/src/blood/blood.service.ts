@@ -54,8 +54,14 @@ export class BloodService {
     return this.requestRepo.find({ where: { patientId }, order: { createdAt: 'DESC' } });
   }
 
+  /**
+   * Donor-facing request data intentionally excludes the patient relation.
+   * Donors need the request's medical matching information, not the patient's
+   * PII. The patient relationship is still enforced server-side during
+   * cancellation/ownership operations.
+   */
   findPendingRequests(): Promise<BloodRequestEntity[]> {
-    return this.requestRepo.find({ where: { status: BloodRequestStatus.PENDING }, relations: ['patient'] });
+    return this.requestRepo.find({ where: { status: BloodRequestStatus.PENDING } });
   }
 
   async fulfill(id: string, donorUserId: string): Promise<BloodRequestEntity> {
