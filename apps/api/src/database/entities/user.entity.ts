@@ -20,7 +20,7 @@ export class UserEntity {
   @Column({ length: 255, unique: true })
   email!: string;
 
-  @Column({ name: 'password_hash' })
+  @Column({ name: 'password_hash', select: false })
   passwordHash!: string;
 
   @Column({ type: 'enum', enum: Role })
