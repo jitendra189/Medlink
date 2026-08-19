@@ -57,6 +57,11 @@ describe('BloodService', () => {
     expect(result.bloodGroup).toBe(BloodGroup.O_POS);
   });
 
+  it('donor-facing pending requests do not load patient PII', async () => {
+    await service.findPendingRequests();
+    expect(requestRepo.find).toHaveBeenCalledWith({ where: { status: BloodRequestStatus.PENDING } });
+  });
+
   it('fulfills a compatible pending request atomically', async () => {
     await service.fulfill('r-1', 'u-1');
     expect(manager.save).toHaveBeenCalledWith(expect.objectContaining({ donorId: 'd-1' }));
