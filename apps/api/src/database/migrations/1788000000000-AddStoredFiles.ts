@@ -21,6 +21,24 @@ export class AddStoredFiles1788000000000 implements MigrationInterface {
     `);
     await queryRunner.query(`CREATE INDEX "IDX_stored_files_owner_user_id" ON "stored_files" ("owner_user_id")`);
     await queryRunner.query(`CREATE INDEX "IDX_stored_files_patient_id" ON "stored_files" ("patient_id")`);
+
+    await queryRunner.query(`
+      INSERT INTO "stored_files" ("filename", "owner_user_id", "kind", "mime_type")
+      SELECT
+        substring("avatar_url" from '([^/]+)$'),
+        "id",
+        'avatar',
+        CASE
+          WHEN lower("avatar_url") LIKE '%.png' THEN 'image/png'
+          WHEN lower("avatar_url") LIKE '%.gif' THEN 'image/gif'
+          ELSE 'image/jpeg'
+        END
+      FROM "users"
+      WHERE "avatar_url" IS NOT NULL
+        AND "avatar_url" ~ '/api/v1/uploads/files/[^/]+'
+        AND substring("avatar_url" from '([^/]+)$') IS NOT NULL
+      ON CONFLICT ("filename") DO NOTHING
+    `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
