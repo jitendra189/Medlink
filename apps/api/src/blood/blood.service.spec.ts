@@ -33,7 +33,8 @@ describe('BloodService', () => {
             findOne: jest.fn().mockResolvedValue(mockDonor),
             save: jest.fn().mockResolvedValue(mockDonor),
             createQueryBuilder: jest.fn().mockReturnValue({
-              leftJoinAndSelect: jest.fn().mockReturnThis(),
+              leftJoin: jest.fn().mockReturnThis(),
+              addSelect: jest.fn().mockReturnThis(),
               where: jest.fn().mockReturnThis(),
               andWhere: jest.fn().mockReturnThis(),
               skip: jest.fn().mockReturnThis(),
@@ -56,15 +57,17 @@ describe('BloodService', () => {
         },
       ],
     }).compile();
-    service = module.get<BloodService>(BloodService);
+    service = module.get(BloodService);
     donorRepo = module.get(getRepositoryToken(BloodDonorEntity));
     requestRepo = module.get(getRepositoryToken(BloodRequestEntity));
   });
 
-  it('searchDonors returns paginated available donors', async () => {
+  it('searchDonors returns paginated available donors without selecting password fields', async () => {
     const result = await service.searchDonors({ bloodGroup: BloodGroup.O_POS });
     expect(result.data).toHaveLength(1);
     expect(result.meta.total).toBe(1);
+    const qb = donorRepo.createQueryBuilder.mock.results[0].value;
+    expect(qb.addSelect).toHaveBeenCalledWith(['u.id', 'u.name']);
   });
 
   it('createRequest saves and returns blood request', async () => {
