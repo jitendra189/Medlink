@@ -13,7 +13,7 @@ export class UsersService {
   findByEmail(email: string): Promise<UserEntity | null> {
     return this.userRepo
       .createQueryBuilder('user')
-      .addSelect('user.password_hash')
+      .addSelect('user.passwordHash')
       .where('user.email = :email', { email })
       .getOne();
   }
